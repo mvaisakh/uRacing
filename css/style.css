@@ -26,8 +26,43 @@ html, body {
 
 #game-canvas {
   display: block;
-  background-color: #2b303c;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  width: 100vw;
+  height: 100vh;
+  background-color: #0f1318;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+#file-cors-warning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 520px;
+  padding: 24px;
+  background: rgba(18, 22, 30, 0.95);
+  border: 2px solid #e74c3c;
+  border-radius: 8px;
+  color: #ecf0f1;
+  text-align: center;
+  font-family: monospace;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  display: none;
+}
+#file-cors-warning h2 {
+  color: #e74c3c;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+#file-cors-warning p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #bdc3c7;
+  margin-bottom: 14px;
+}
+#file-cors-warning code {
+  background: #2c3e50;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #00cec9;
 }

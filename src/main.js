@@ -35,7 +35,7 @@ import { TouchControls } from './ui/TouchControls.js';
 import { PerformanceMonitor } from './core/PerformanceMonitor.js';
 import { EngineDiagnostics } from './core/Diagnostics.js';
 
-window.addEventListener('DOMContentLoaded', () => {
+function initGame() {
   const canvas = document.getElementById('game-canvas');
   if (!canvas) {
     console.error('Fatal: Failed to locate game-canvas element.');
@@ -407,4 +407,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   loop.start();
   console.info('μRacing engine ready with locked 60fps loop, SFX, Nitro, and Camera Trauma!');
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGame);
+} else {
+  initGame();
+}

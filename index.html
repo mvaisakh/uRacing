@@ -9,7 +9,17 @@
 <body>
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
+    <div id="file-cors-warning">
+      <h2>⚠️ Local Server Required for ES Modules</h2>
+      <p>Modern browsers block ES modules when loaded directly from disk (<code>file://</code> protocol).</p>
+      <p>To run locally, run this command in terminal:<br><br><code>python3 -m http.server 8000</code><br><br>and open <code>http://localhost:8000</code></p>
+    </div>
   </div>
+  <script>
+    if (window.location.protocol === 'file:') {
+      document.getElementById('file-cors-warning').style.display = 'block';
+    }
+  </script>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>
