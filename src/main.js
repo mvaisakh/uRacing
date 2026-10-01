@@ -4,7 +4,7 @@ import { InputHandler } from './input/InputHandler.js';
 import { GameState } from './core/GameState.js';
 import { VEHICLE_ROSTER } from './vehicles/VehicleRoster.js';
 import { Car } from './vehicles/Car.js';
-import { Camera2D } from './render/Camera2D.js';
+import { Camera3D } from './render/Camera3D.js';
 import { VehicleRenderer } from './render/VehicleRenderer.js';
 import { ParticleSystem } from './render/ParticleSystem.js';
 import { Vec2 } from './math/Vec2.js';
@@ -52,7 +52,7 @@ function initGame() {
   const storage = new StorageService('uracing');
   const gameState = new GameState(storage);
   const input = new InputHandler();
-  const camera = new Camera2D(canvas.width, canvas.height);
+  const camera = new Camera3D(canvas.width, canvas.height);
   const cameraShake = new CameraShake();
   const particles = new ParticleSystem();
   const sounds = new SoundSystem();
@@ -266,7 +266,7 @@ function initGame() {
       // Audio & Camera
       sounds.updateEngine(playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerControls.throttle);
       sounds.updateDriftScreech(playerCar.isDrifting, playerCar.lateralVelocity);
-      camera.follow(playerCar.body.position, playerCar.body.velocity, dt);
+      camera.follow(playerCar.body.position, playerCar.body.angle, playerCar.body.velocity, dt);
       cameraShake.update(dt);
 
       // Particles
