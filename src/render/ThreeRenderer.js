@@ -40,6 +40,7 @@ export class ThreeRenderer {
 
     this.trackCurve = null;
     this.cameraLookAt = new THREE.Vector3();
+    this.cameraAngle = 0;
   }
 
   resize(w, h) {
@@ -162,19 +163,30 @@ export class ThreeRenderer {
     });
     
     // Procedural Low Poly Chassis
-    // Dimensions based on car stats to make them unique
-    const width = car.spec.width || 18;
-    const length = car.spec.length || 34;
-    const height = 10;
+    const stats = car.spec.stats;
+    const speed = stats ? stats.speed : 50;
+    const weight = stats ? stats.weight : 50;
+    const drift = stats ? stats.drift : 50;
+
+    // Fast cars are longer and lower. Heavy cars are wider and taller.
+    const width = 12 + (weight / 100) * 12; // 12 to 24
+    const length = 22 + (speed / 100) * 22; // 22 to 44
+    const height = 6 + (weight / 100) * 8; // 6 to 14
+    
     const chassisGeo = new THREE.BoxGeometry(length, height, width);
     const chassis = new THREE.Mesh(chassisGeo, toyMaterialBody);
-    chassis.position.y = height / 2 + 4; // Lift above wheels
+    chassis.position.y = height / 2 + 4;
     
-    // Procedural Low Poly Cabin
-    const cabinGeo = new THREE.BoxGeometry(length - 12, height - 2, width - 4);
+    // Cabin size depends on drift and handling
+    const cabinLength = length * 0.4;
+    const cabinWidth = width - 4;
+    const cabinHeight = height * 0.7;
+    const cabinGeo = new THREE.BoxGeometry(cabinLength, cabinHeight, cabinWidth);
     const cabin = new THREE.Mesh(cabinGeo, toyGlass);
     cabin.position.y = height + 4;
-    cabin.position.x = -2; // Slightly towards rear
+    
+    // Position cabin based on engine type (drift cars might have longer front hoods)
+    cabin.position.x = -(length * 0.15) + (drift / 100) * (length * 0.2);
     
     // Procedural Wheels
     const wheelGeo = new THREE.CylinderGeometry(4, 4, width + 2, 8);
@@ -293,10 +305,16 @@ export class ThreeRenderer {
     if (!carGroup) return;
     
     const carPos = carGroup.position.clone();
-    const angle = -car.body.angle;
+    let targetAngle = -car.body.angle;
     
-    const dx = Math.cos(angle) * -chaseDist;
-    const dz = Math.sin(angle) * -chaseDist;
+    // Smooth angle interpolation to prevent whipping on sharp turns
+    let diff = targetAngle - this.cameraAngle;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    this.cameraAngle += diff * (2.0 * dt);
+    
+    const dx = Math.cos(this.cameraAngle) * -chaseDist;
+    const dz = Math.sin(this.cameraAngle) * -chaseDist;
     
     const idealPos = new THREE.Vector3(carPos.x + dx, carPos.y + height, carPos.z + dz);
     
@@ -304,9 +322,9 @@ export class ThreeRenderer {
     this.camera.position.lerp(idealPos, 3.5 * dt);
     
     const lookAtPos = new THREE.Vector3(
-        carPos.x + Math.cos(angle) * 50,
+        carPos.x + Math.cos(this.cameraAngle) * 50,
         carPos.y,
-        carPos.z + Math.sin(angle) * 50
+        carPos.z + Math.sin(this.cameraAngle) * 50
     );
     this.cameraLookAt.lerp(lookAtPos, 6.0 * dt);
     this.camera.lookAt(this.cameraLookAt);
