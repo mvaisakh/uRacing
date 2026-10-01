@@ -68,4 +68,13 @@ export class SoundSystem {
       this.engineGain.gain.setTargetAtTime(0.04 * volume, this.ctx.currentTime, 0.05);
     }
   }
+
+  updateEngine(speed, topSpeed, throttle) {
+    if (!this.initialized || !this.ctx) return;
+    const ratio = Math.min(Math.abs(speed) / (topSpeed || 400), 1.0);
+    // Base idle 50Hz, revs up to 260Hz with throttle pitch flare
+    const throttleBoost = throttle > 0 ? 35 : 0;
+    const targetFreq = 50 + ratio * 180 + throttleBoost;
+    this.engineOsc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.08);
+  }
 }
