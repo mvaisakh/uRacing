@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
 
 export class ThreeRenderer {
   constructor(canvasWidth, canvasHeight) {
@@ -36,6 +40,21 @@ export class ThreeRenderer {
     this.trackMeshes = [];
     this.garageMode = false;
     
+    // Setup Post-Processing (2000s vibes: Bloom + subtle film grain/scanlines)
+    this.composer = new EffectComposer(this.renderer);
+    
+    const renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(renderPass);
+    
+    // Bloom (Early 2000s games loved excessive bloom)
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(canvasWidth, canvasHeight), 0.8, 0.4, 0.85);
+    this.composer.addPass(bloomPass);
+    
+    // FilmPass (Subtle scanlines and grain for that retro monitor feel)
+    // noiseIntensity, scanlinesIntensity, scanlinesCount, grayscale
+    const filmPass = new FilmPass(0.35, 0.25, 480, false);
+    this.composer.addPass(filmPass);
+    
     this.carModelTemplate = null;
     const loader = new GLTFLoader();
     loader.load('public/models/sedan.glb', (gltf) => {
@@ -61,6 +80,7 @@ export class ThreeRenderer {
 
   resize(w, h) {
     this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
@@ -243,6 +263,7 @@ export class ThreeRenderer {
   }
 
   render() {
-    this.renderer.render(this.scene, this.camera);
+    // 2000s games often jitter the camera or we can just render the composer
+    this.composer.render();
   }
 }
