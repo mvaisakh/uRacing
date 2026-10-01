@@ -218,7 +218,25 @@ export class ThreeRenderer {
 
   setGarageMode(active, previewCar) {
     this.garageMode = active;
+    
+    if (!this.garagePedestal) {
+        const pedGeo = new THREE.CylinderGeometry(25, 28, 5, 32);
+        const pedMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+        this.garagePedestal = new THREE.Mesh(pedGeo, pedMat);
+        this.garagePedestal.position.y = -2.5;
+        this.scene.add(this.garagePedestal);
+        
+        // Neon ring
+        const ringGeo = new THREE.TorusGeometry(25, 0.5, 8, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0;
+        this.garagePedestal.add(ring);
+    }
+    
     if (active && previewCar) {
+        this.scene.background = new THREE.Color(0x0f1318);
         this.trackMeshes.forEach(m => m.visible = false);
         this.carMeshes.forEach((mesh, id) => {
             if (id !== 'preview') mesh.group.visible = false;
@@ -228,13 +246,15 @@ export class ThreeRenderer {
         let pMesh = this.carMeshes.get('preview');
         pMesh.group.visible = true;
         
-        // Put car at center
+        // Put car at center, on pedestal
         pMesh.group.position.set(0, 0, 0);
+        this.garagePedestal.visible = true;
         
         // Setup garage camera
-        this.camera.position.set(60, 40, 80);
-        this.camera.lookAt(0, 5, 0);
+        this.camera.position.set(40, 20, 50);
+        this.camera.lookAt(0, 0, 0);
     } else {
+        this.scene.background = new THREE.Color(0x87CEEB);
         this.trackMeshes.forEach(m => m.visible = true);
         this.carMeshes.forEach((mesh, id) => {
             if (id !== 'preview') mesh.group.visible = true;
@@ -242,6 +262,7 @@ export class ThreeRenderer {
         if (this.carMeshes.has('preview')) {
             this.carMeshes.get('preview').group.visible = false;
         }
+        this.garagePedestal.visible = false;
     }
   }
 
