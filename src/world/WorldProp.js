@@ -64,17 +64,28 @@ export class WorldProp {
       // 2. 3D Cylindrical Extrusion Wall (Rendered slice by slice)
       const slices = 8;
       for (let s = 0; s < slices; s++) {
-        const offset = - (s / slices) * h;
+        const offset = (s / slices) * h;
         ctx.fillStyle = this._shadeColor(this.color, -30 + s * 3);
         ctx.beginPath();
-        ctx.arc(0, offset, this.radius, 0, Math.PI * 2);
+        
+        ctx.save();
+        const t = ctx.getTransform();
+        t.f -= offset * t.a;
+        ctx.setTransform(t);
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
       }
 
-      // 3. Top Rim & Metal Can Top (elevated at -h)
+      // 3. Top Rim & Metal Can Top (elevated at h)
       ctx.fillStyle = this.color;
       ctx.beginPath();
-      ctx.arc(0, -h, this.radius, 0, Math.PI * 2);
+      
+      ctx.save();
+      const tTop = ctx.getTransform();
+      tTop.f -= h * tTop.a;
+      ctx.setTransform(tTop);
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = 'rgba(0,0,0,0.3)';
       ctx.lineWidth = 1.5;
@@ -84,29 +95,42 @@ export class WorldProp {
       ctx.strokeStyle = '#bdc3c7';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.arc(0, -h, this.radius * 0.78, 0, Math.PI * 2);
+      ctx.arc(0, 0, this.radius * 0.78, 0, Math.PI * 2);
       ctx.stroke();
 
       // Soda pull tab
       ctx.fillStyle = '#95a5a6';
-      ctx.fillRect(-2.5, -h - this.radius * 0.5, 5, this.radius * 0.5);
+      ctx.fillRect(-2.5, -this.radius * 0.5, 5, this.radius * 0.5);
+      ctx.restore();
     } else {
       // 3D Box Extrusion
       ctx.fillRect(-this.width / 2 + 8, -this.height / 2 + 10, this.width, this.height);
 
       const slices = 6;
       for (let s = 0; s < slices; s++) {
-        const offset = - (s / slices) * h;
+        const offset = (s / slices) * h;
         ctx.fillStyle = this._shadeColor(this.color, -25 + s * 4);
-        ctx.fillRect(-this.width / 2, -this.height / 2 + offset, this.width, this.height);
+        
+        ctx.save();
+        const t = ctx.getTransform();
+        t.f -= offset * t.a;
+        ctx.setTransform(t);
+        ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        ctx.restore();
       }
 
       // Top box face
       ctx.fillStyle = this.color;
-      ctx.fillRect(-this.width / 2, -this.height / 2 - h, this.width, this.height);
+      
+      ctx.save();
+      const tTop = ctx.getTransform();
+      tTop.f -= h * tTop.a;
+      ctx.setTransform(tTop);
+      ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(-this.width / 2, -this.height / 2 - h, this.width, this.height);
+      ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+      ctx.restore();
     }
     ctx.restore();
   }

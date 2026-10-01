@@ -1,6 +1,6 @@
 # μRacing (Micro Racing)
 
-A high-octane, client-side browser racing game channeling the die-cast miniature aesthetic and fluid mechanics of *Hot Wheels Micro Racers*.
+A high-octane, client-side browser racing game channeling the die-cast miniature aesthetic and fluid mechanics of classic micro racers.
 
 Built with 100% static HTML5 Canvas and Vanilla ES Modules, zero external runtime dependencies, deployable directly to **GitHub Pages**.
 

@@ -1,5 +1,5 @@
 /**
- * Track Roster: Miniature, die-cast thematic circuits inspired by Hot Wheels Micro Racers
+ * Track Roster: Miniature, die-cast thematic circuits
  */
 export const TRACK_ROSTER = {
   kitchen_countertop: {

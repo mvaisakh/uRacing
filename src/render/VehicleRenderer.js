@@ -45,7 +45,7 @@ export class VehicleRenderer {
     ctx.fill();
 
     // 4. Low-Poly 3D Slices
-    const zSpacing = 1.8;
+    const zSpacing = 3.5;
     
     // Chassis Slices
     const chassisSlices = 4;
@@ -55,7 +55,9 @@ export class VehicleRenderer {
       const baseColor = this._adjustBrightness(spec.color, lightFactor);
 
       ctx.save();
-      ctx.translate(0, zOffset);
+      const t = ctx.getTransform();
+      t.f -= zOffset * t.a;
+      ctx.setTransform(t);
       this._renderChassisMesh(ctx, hw, hl, baseColor, spec.id);
       
       // Details on the top chassis slice (hood, headlights, taillights)
@@ -72,7 +74,11 @@ export class VehicleRenderer {
       const lightFactor = -5 + slice * 5;
       
       ctx.save();
-      ctx.translate(0, zOffset);
+      
+      // True vertical screen-space extrusion for cabin
+      const t = ctx.getTransform();
+      t.f -= zOffset * t.a;
+      ctx.setTransform(t);
       
       // The cabin shape is smaller than the chassis
       this._renderCabinMesh(ctx, hw, hl, spec, slice, cabinSlices, lightFactor);

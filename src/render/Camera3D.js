@@ -10,17 +10,11 @@ export class Camera3D {
     this.viewportHeight = viewportHeight;
 
     this.position = new Vec2();
-    this.angle = 0; // Camera yaw orientation
-    this.targetAngle = 0;
-
-    // Camera chase distances
-    this.chaseDistance = 60;  // Closer to the vehicle
-    this.elevation = 40;      // Height above the track surface
-    this.pitch = 0.40;        // Lower perspective squashing pitch (less aerial)
-    this.fovScale = 1.2;
-
-    this.smoothPos = 10.0;
-    this.smoothRot = 8.0;
+    // Fixed isometric zoom and angles
+    this.fovScale = 1.6;
+    this.pitch = 0.6; // Isometric squash
+    
+    this.smoothPos = 12.0;
   }
 
   resize(w, h) {
@@ -29,51 +23,29 @@ export class Camera3D {
   }
 
   follow(targetPos, targetAngle, targetVelocity, dt) {
-    this.targetAngle = targetAngle;
-
-    // Angular smooth follow with shortest arc wrapping
-    let diff = this.targetAngle - this.angle;
-    while (diff < -Math.PI) diff += Math.PI * 2;
-    while (diff > Math.PI) diff -= Math.PI * 2;
-    const rotT = 1 - Math.exp(-this.smoothRot * dt);
-    this.angle += diff * rotT;
-
-    // Follow position (anchored behind vehicle)
+    // Smooth position follow (no rotation tracking to prevent nausea)
     const posT = 1 - Math.exp(-this.smoothPos * dt);
     this.position.x += (targetPos.x - this.position.x) * posT;
     this.position.y += (targetPos.y - this.position.y) * posT;
-
-    // Dynamic FOV / distance based on vehicle forward velocity
-    // Zoomed in for a proper third-person view
+    
+    // Zoom out slightly at speed
     const speed = targetVelocity.length();
-    const targetFov = Math.max(2.8, 3.8 - (speed / 800) * 0.8);
-    // Smoothly interpolate fovScale
+    const targetFov = Math.max(1.3, 1.8 - (speed / 800) * 0.4);
     this.fovScale += (targetFov - this.fovScale) * 5.0 * dt;
   }
 
-  /**
-   * Sets up 3D perspective camera matrix on the 2D canvas:
-   * 1. Translates center to screen bottom-center.
-   * 2. Scales for perspective foreshortening (pitch).
-   * 3. Rotates world so heading is UP.
-   * 4. Translates camera focal point with chase offset.
-   */
   begin(ctx) {
     ctx.save();
-    // Center point shifted further down to allow more view of the horizon ahead
-    ctx.translate(this.viewportWidth / 2, this.viewportHeight * 0.75);
+    // Center point
+    ctx.translate(this.viewportWidth / 2, this.viewportHeight / 2);
 
-    // Apply 3D perspective tilt (pitch down looking forward)
+    // Apply isometric tilt and fixed 45-degree rotation
     ctx.scale(this.fovScale, this.fovScale * this.pitch);
+    // Fixed isometric angle (Math.PI / 4 = 45 degrees)
+    ctx.rotate(-Math.PI / 4);
 
-    // Rotate world so vehicle is facing upward (+Y forward)
-    // Vehicle heading angle is 0 along +X, so we rotate -angle - PI/2
-    ctx.rotate(-this.angle - Math.PI / 2);
-
-    // Anchor camera behind the car
-    const heading = Vec2.fromAngle(this.angle);
-    const cameraEye = this.position.clone().sub(heading.clone().scale(this.chaseDistance));
-    ctx.translate(-cameraEye.x, -cameraEye.y);
+    // Translate to camera focus point
+    ctx.translate(-this.position.x, -this.position.y);
   }
 
   end(ctx) {
