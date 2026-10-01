@@ -58,6 +58,12 @@ export class ThreeRenderer {
     
     this.carModelTemplate = null;
     const loader = new GLTFLoader();
+
+    // Setup Draco loader for compressed GLBs
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://unpkg.com/three@0.128.0/examples/js/libs/draco/gltf/');
+    loader.setDRACOLoader(dracoLoader);
+
     loader.load('public/models/sedan.glb', (gltf) => {
       this.carModelTemplate = gltf.scene;
       const box = new THREE.Box3().setFromObject(this.carModelTemplate);
