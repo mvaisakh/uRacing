@@ -107,7 +107,6 @@ export class ThreeRenderer {
     
     const extrudeSettings = { steps: 150, extrudePath: curve, bevelEnabled: false };
     const trackGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    trackGeom.rotateX(Math.PI / 2);
     const trackMat = new THREE.MeshLambertMaterial({ color: 0xff6600 });
     const trackMesh = new THREE.Mesh(trackGeom, trackMat);
     this.scene.add(trackMesh);
@@ -126,9 +125,7 @@ export class ThreeRenderer {
     edgeShapeRight.lineTo(trackWidth/2, 12);
 
     const leftGeom = new THREE.ExtrudeGeometry(edgeShapeLeft, extrudeSettings);
-    leftGeom.rotateX(Math.PI / 2);
     const rightGeom = new THREE.ExtrudeGeometry(edgeShapeRight, extrudeSettings);
-    rightGeom.rotateX(Math.PI / 2);
     
     const edgeMat = new THREE.MeshLambertMaterial({ color: 0xcc0000 });
     const leftMesh = new THREE.Mesh(leftGeom, edgeMat);

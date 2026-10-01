@@ -334,13 +334,7 @@ function initGame() {
       
       threeRenderer.render();
       
-      // Render particles on 2D canvas (overlay)
-      camera.begin(ctx);
-      ctx.translate(shake.x, shake.y);
-      ctx.rotate(shake.angle);
-      particles.render(ctx);
-      if (nitro.isActive && playerCar) NitroFlames.render(ctx, playerCar);
-      camera.end(ctx);
+      // 2D particles removed as they don't align with 3D perspective camera
 
       // --- Screen Space HUD ---
       ctx.fillStyle = 'rgba(15, 20, 26, 0.85)';
