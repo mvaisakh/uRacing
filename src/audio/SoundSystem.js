@@ -77,4 +77,33 @@ export class SoundSystem {
     const targetFreq = 50 + ratio * 180 + throttleBoost;
     this.engineOsc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.08);
   }
+
+  updateDriftScreech(isDrifting, lateralSpeed) {
+    if (!this.initialized || !this.ctx) return;
+    const targetGain = isDrifting ? Math.min(0.08, (Math.abs(lateralSpeed) / 120) * 0.08) : 0;
+    this.driftGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.05);
+  }
+
+  playImpactSound(speed = 200) {
+    if (!this.initialized || !this.ctx) return;
+    // Generate white noise burst with rapid decay for metallic toy bounce
+    const bufferSize = this.ctx.sampleRate * 0.08;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const gain = this.ctx.createGain();
+    const intensity = Math.min(1.0, speed / 400);
+    gain.gain.setValueAtTime(0.2 * intensity, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+    noise.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start();
+  }
 }
