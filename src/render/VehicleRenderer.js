@@ -44,217 +44,111 @@ export class VehicleRenderer {
     this._drawRoundedRect(ctx, -hw + 1, -hl + 2, width - 2, length - 4, 3);
     ctx.fill();
 
-    // 4. Low-Poly 3D Slices
-    const zSpacing = 3.5;
+    // 4. True Low-Poly 3D Mesh (Replaces 2.5D slices)
+    // Get the base world-to-screen transform matrix
+    const t = ctx.getTransform();
     
-    // Chassis Slices
-    const chassisSlices = 4;
-    for (let slice = 0; slice < chassisSlices; slice++) {
-      const zOffset = slice * zSpacing; 
-      const lightFactor = -15 + slice * 6;
-      const baseColor = this._adjustBrightness(spec.color, lightFactor);
-
-      ctx.save();
-      const t = ctx.getTransform();
-      t.f -= zOffset * t.a;
-      ctx.setTransform(t);
-      this._renderChassisMesh(ctx, hw, hl, baseColor, spec.id);
-      
-      // Details on the top chassis slice (hood, headlights, taillights)
-      if (slice === chassisSlices - 1) {
-        this._renderChassisDetails(ctx, hw, hl, spec, car);
-      }
-      ctx.restore();
-    }
-
-    // Cabin Slices (Windows & Roof)
-    const cabinSlices = 4;
-    for (let slice = 0; slice < cabinSlices; slice++) {
-      const zOffset = (chassisSlices + slice) * zSpacing; 
-      const lightFactor = -5 + slice * 5;
-      
-      ctx.save();
-      
-      // True vertical screen-space extrusion for cabin
-      const t = ctx.getTransform();
-      t.f -= zOffset * t.a;
-      ctx.setTransform(t);
-      
-      // The cabin shape is smaller than the chassis
-      this._renderCabinMesh(ctx, hw, hl, spec, slice, cabinSlices, lightFactor);
-      
-      if (slice === cabinSlices - 1) {
-        this._renderRoofDetails(ctx, hw, hl, spec);
-      }
-      
-      ctx.restore();
-    }
+    // Base height offset
+    const zBase = 2;
+    
+    // Chassis Box
+    const cW = hw * 1.8;
+    const cL = hl * 1.9;
+    const cH = 10;
+    this._render3DBox(ctx, t, cW, cL, cH, zBase, spec.color);
+    
+    // Cabin Box
+    const cabW = hw * 1.4;
+    const cabL = hl * 0.9;
+    const cabH = 8;
+    const cabZ = zBase + cH;
+    // Shift cabin slightly backwards
+    this._render3DBox(ctx, t, cabW, cabL, cabH, cabZ, '#111111', 0, -hl * 0.2);
 
     ctx.restore();
   }
 
-  static _renderChassisMesh(ctx, hw, hl, color, carId) {
-    ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.lineWidth = 1.0;
-
-    ctx.beginPath();
-    if (carId === 'maranello_rosso' || carId === 'stuttgart_arrow') {
-      // Sports/Supercar (Wedge/Sleek)
-      ctx.moveTo(-hw * 0.8, hl);
-      ctx.lineTo(hw * 0.8, hl);
-      ctx.lineTo(hw, hl * 0.5);
-      ctx.lineTo(hw * 1.05, -hl * 0.7);
-      ctx.lineTo(hw * 0.85, -hl);
-      ctx.lineTo(-hw * 0.85, -hl);
-      ctx.lineTo(-hw * 1.05, -hl * 0.7);
-      ctx.lineTo(-hw, hl * 0.5);
-    } else if (carId === 'group_b_monster') {
-      // Hot Hatch / Rally (Boxy, wide fenders)
-      ctx.moveTo(-hw * 0.9, hl * 0.9);
-      ctx.lineTo(hw * 0.9, hl * 0.9);
-      ctx.lineTo(hw * 1.1, hl * 0.5);
-      ctx.lineTo(hw * 0.95, 0);
-      ctx.lineTo(hw * 1.1, -hl * 0.6);
-      ctx.lineTo(hw * 0.9, -hl * 0.9);
-      ctx.lineTo(-hw * 0.9, -hl * 0.9);
-      ctx.lineTo(-hw * 1.1, -hl * 0.6);
-      ctx.lineTo(-hw * 0.95, 0);
-      ctx.lineTo(-hw * 1.1, hl * 0.5);
-    } else {
-      // Sedan / Muscle (Standard)
-      ctx.moveTo(-hw * 0.85, hl * 0.95);
-      ctx.lineTo(hw * 0.85, hl * 0.95);
-      ctx.lineTo(hw, hl * 0.6);
-      ctx.lineTo(hw, -hl * 0.8);
-      ctx.lineTo(hw * 0.85, -hl);
-      ctx.lineTo(-hw * 0.85, -hl);
-      ctx.lineTo(-hw, -hl * 0.8);
-      ctx.lineTo(-hw, hl * 0.6);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+  static _shadeColor(color, amount) {
+    let r = parseInt(color.substring(1,3), 16);
+    let g = parseInt(color.substring(3,5), 16);
+    let b = parseInt(color.substring(5,7), 16);
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+    return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
   }
 
-  static _renderChassisDetails(ctx, hw, hl, spec, car) {
-    // Front Grille
-    ctx.fillStyle = '#111';
-    if (spec.id === 'detroit_bruiser') {
-      ctx.fillRect(-hw * 0.5, hl * 0.9, hw, hl * 0.1);
-    } else if (spec.id === 'stuttgart_arrow') {
-      // No front grille
-    } else {
-      ctx.fillRect(-hw * 0.4, hl * 0.9, hw * 0.8, hl * 0.1);
-    }
-
-    // Racing Stripes
-    if (spec.stripeColor) {
-      ctx.fillStyle = spec.stripeColor;
-      ctx.fillRect(-2, -hl * 0.9, 4, hl * 1.8);
-    }
-
-    // Headlights
-    ctx.fillStyle = '#fffbc8';
-    if (spec.id === 'maranello_rosso') {
-      // Pop-up headlights style
-      ctx.fillRect(-hw * 0.8, hl * 0.6, hw * 0.4, hl * 0.15);
-      ctx.fillRect(hw * 0.4, hl * 0.6, hw * 0.4, hl * 0.15);
-    } else {
-      ctx.beginPath();
-      ctx.arc(-hw * 0.6, hl * 0.85, 2, 0, Math.PI * 2);
-      ctx.arc(hw * 0.6, hl * 0.85, 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Taillights
-    const isBraking = car.forwardVelocity < -1 || car.isDrifting;
-    ctx.fillStyle = isBraking ? '#ff3838' : '#c0392b';
-    ctx.fillRect(-hw * 0.8, -hl * 0.95, hw * 0.5, hl * 0.15);
-    ctx.fillRect(hw * 0.3, -hl * 0.95, hw * 0.5, hl * 0.15);
-    
-    // Rear Wing / Spoiler
-    if (spec.id === 'group_b_monster' || spec.id === 'tokyo_drift_king' || spec.id === 'maranello_rosso') {
-      ctx.fillStyle = '#11141a';
-      ctx.fillRect(-hw * 0.9, -hl * 0.9, hw * 1.8, hl * 0.2);
-    }
+  static _project3D(t, x, y, z) {
+    const sx = t.a * x + t.c * y + t.e;
+    const sy = t.b * x + t.d * y + t.f;
+    // Exact vertical screen-space extrusion (using horizontal scale factor)
+    const scale = Math.hypot(t.a, t.b);
+    return { x: sx, y: sy - z * scale };
   }
 
-  static _renderCabinMesh(ctx, hw, hl, spec, sliceIdx, maxSlices, lightFactor) {
-    // Cabin tapers inwards slightly as it goes up
-    const taper = 1.0 - (sliceIdx / maxSlices) * 0.15;
-    const cW = hw * 0.75 * taper;
+  static _render3DBox(ctx, t, w, l, h, zOffset, color, offsetX = 0, offsetY = 0) {
+    const hw = w / 2;
+    const hl = l / 2;
     
-    // Different cars have different cabin lengths
-    let cL_front = hl * 0.2;
-    let cL_rear = -hl * 0.6;
-    
-    if (spec.id === 'detroit_bruiser') {
-      // Long hood, short rear deck
-      cL_front = hl * 0.1;
-      cL_rear = -hl * 0.7;
-    } else if (spec.id === 'stuttgart_arrow' || spec.id === 'maranello_rosso') {
-      // Sloping fastback
-      cL_front = hl * 0.3;
-      cL_rear = -hl * 0.8;
-    } else if (spec.id === 'group_b_monster') {
-      // Hatchback shape
-      cL_front = hl * 0.4;
-      cL_rear = -hl * 0.9;
-    }
+    // 8 Corners of the box in local car space
+    const corners = [
+      { x: offsetX + hw, y: offsetY + hl, z: zOffset + h }, // 0: Top Front Right
+      { x: offsetX - hw, y: offsetY + hl, z: zOffset + h }, // 1: Top Front Left
+      { x: offsetX - hw, y: offsetY - hl, z: zOffset + h }, // 2: Top Back Left
+      { x: offsetX + hw, y: offsetY - hl, z: zOffset + h }, // 3: Top Back Right
+      { x: offsetX + hw, y: offsetY + hl, z: zOffset },     // 4: Bottom Front Right
+      { x: offsetX - hw, y: offsetY + hl, z: zOffset },     // 5: Bottom Front Left
+      { x: offsetX - hw, y: offsetY - hl, z: zOffset },     // 6: Bottom Back Left
+      { x: offsetX + hw, y: offsetY - hl, z: zOffset }      // 7: Bottom Back Right
+    ];
 
-    // Check if this slice is rendering windows (middle slices) or roof (top slices)
-    const isWindowSlice = sliceIdx < maxSlices - 1;
+    // Project to screen space
+    const proj = corners.map(c => this._project3D(t, c.x, c.y, c.z));
+
+    // Define 5 visible faces (Bottom is never seen)
+    const faces = [
+      { v: [0, 1, 2, 3], norm: {x:0, y:0, z:1}, color: color }, // Top
+      { v: [0, 3, 7, 4], norm: {x:1, y:0, z:0}, color: this._shadeColor(color, -25) }, // Right
+      { v: [1, 0, 4, 5], norm: {x:0, y:1, z:0}, color: this._shadeColor(color, 15) }, // Front
+      { v: [2, 1, 5, 6], norm: {x:-1, y:0, z:0}, color: this._shadeColor(color, -40) }, // Left
+      { v: [3, 2, 6, 7], norm: {x:0, y:-1, z:0}, color: this._shadeColor(color, -60) }  // Back
+    ];
+
+    // Determine global camera look vector in local car space to do backface culling.
+    // In our engine, camera is isometric (looks towards +X, +Y in world).
+    // Actually, we can just use the Shoelace formula to find polygon screen-space winding order!
+    // If signed area is positive, it's facing the camera.
     
-    if (isWindowSlice) {
-      // Draw pillars and windows
-      ctx.fillStyle = '#111'; // Window color
-      ctx.beginPath();
-      ctx.moveTo(-cW, cL_front);
-      ctx.lineTo(cW, cL_front);
-      ctx.lineTo(cW * 0.9, cL_rear);
-      ctx.lineTo(-cW * 0.9, cL_rear);
-      ctx.fill();
+    faces.forEach(f => {
+      // Shoelace formula for 2D polygon area
+      let area = 0;
+      for (let i = 0; i < 4; i++) {
+        const p1 = proj[f.v[i]];
+        const p2 = proj[f.v[(i + 1) % 4]];
+        area += (p2.x - p1.x) * (p2.y + p1.y);
+      }
       
-      // Draw Pillars
-      ctx.fillStyle = spec.color;
-      // A-Pillar
-      ctx.fillRect(-cW, cL_front - 2, 2, 4);
-      ctx.fillRect(cW - 2, cL_front - 2, 2, 4);
-      // B-Pillar
-      ctx.fillRect(-cW * 0.95, (cL_front + cL_rear) / 2, 2, 4);
-      ctx.fillRect(cW * 0.95 - 2, (cL_front + cL_rear) / 2, 2, 4);
-      // C-Pillar
-      ctx.fillRect(-cW * 0.9, cL_rear - 1, 2, 4);
-      ctx.fillRect(cW * 0.9 - 2, cL_rear - 1, 2, 4);
-      
-    } else {
-      // Draw solid roof
-      ctx.fillStyle = this._adjustBrightness(spec.color, lightFactor);
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-      ctx.beginPath();
-      ctx.moveTo(-cW, cL_front);
-      ctx.lineTo(cW, cL_front);
-      ctx.lineTo(cW * 0.9, cL_rear);
-      ctx.lineTo(-cW * 0.9, cL_rear);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-  }
-
-  static _renderRoofDetails(ctx, hw, hl, spec) {
-    // Sunroof for some cars
-    if (spec.id === 'tokyo_drift_king' || spec.id === 'detroit_bruiser') {
-      ctx.fillStyle = '#111';
-      ctx.fillRect(-hw * 0.4, -hl * 0.2, hw * 0.8, hl * 0.3);
-    }
-    
-    // Roof scoop
-    if (spec.id === 'group_b_monster') {
-      ctx.fillStyle = '#222';
-      ctx.fillRect(-hw * 0.2, hl * 0.1, hw * 0.4, hl * 0.2);
-    }
+      // If area < 0, it's counter-clockwise (facing camera)
+      if (area < 0) {
+        ctx.fillStyle = f.color;
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.lineWidth = 1;
+        ctx.lineJoin = 'round';
+        
+        // Reset transform to identity because points are already in absolute screen space
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.beginPath();
+        ctx.moveTo(proj[f.v[0]].x, proj[f.v[0]].y);
+        for (let i = 1; i < 4; i++) {
+          ctx.lineTo(proj[f.v[i]].x, proj[f.v[i]].y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
   }
 
   static _drawWheelLowPoly(ctx, x, y, w, l, angle) {
