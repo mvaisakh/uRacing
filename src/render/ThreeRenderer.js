@@ -99,11 +99,15 @@ export class ThreeRenderer {
     const curve = new THREE.CatmullRomCurve3(pts, true);
     
     const trackWidth = trackConfig.trackWidth || 140;
+    
+    // ExtrudeGeometry maps Shape X to World UP (Y), and Shape Y to World SIDE.
+    // So X = thickness, Y = width across the track.
+    const thickness = 4;
     const shape = new THREE.Shape();
-    shape.moveTo(-trackWidth/2, 0);
-    shape.lineTo(trackWidth/2, 0);
-    shape.lineTo(trackWidth/2, -4);
-    shape.lineTo(-trackWidth/2, -4);
+    shape.moveTo(0, -trackWidth/2);
+    shape.lineTo(0, trackWidth/2);
+    shape.lineTo(-thickness, trackWidth/2);
+    shape.lineTo(-thickness, -trackWidth/2);
     
     const extrudeSettings = { steps: 150, extrudePath: curve, bevelEnabled: false };
     const trackGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
@@ -113,16 +117,16 @@ export class ThreeRenderer {
     this.trackMeshes.push(trackMesh);
 
     const edgeShapeLeft = new THREE.Shape();
-    edgeShapeLeft.moveTo(-trackWidth/2 - 10, 0);
-    edgeShapeLeft.lineTo(-trackWidth/2, 0);
-    edgeShapeLeft.lineTo(-trackWidth/2, 12);
-    edgeShapeLeft.lineTo(-trackWidth/2 - 10, 12);
+    edgeShapeLeft.moveTo(12, -trackWidth/2 - 10);
+    edgeShapeLeft.lineTo(0, -trackWidth/2 - 10);
+    edgeShapeLeft.lineTo(0, -trackWidth/2);
+    edgeShapeLeft.lineTo(12, -trackWidth/2);
 
     const edgeShapeRight = new THREE.Shape();
-    edgeShapeRight.moveTo(trackWidth/2, 0);
-    edgeShapeRight.lineTo(trackWidth/2 + 10, 0);
-    edgeShapeRight.lineTo(trackWidth/2 + 10, 12);
-    edgeShapeRight.lineTo(trackWidth/2, 12);
+    edgeShapeRight.moveTo(12, trackWidth/2);
+    edgeShapeRight.lineTo(0, trackWidth/2);
+    edgeShapeRight.lineTo(0, trackWidth/2 + 10);
+    edgeShapeRight.lineTo(12, trackWidth/2 + 10);
 
     const leftGeom = new THREE.ExtrudeGeometry(edgeShapeLeft, extrudeSettings);
     const rightGeom = new THREE.ExtrudeGeometry(edgeShapeRight, extrudeSettings);
