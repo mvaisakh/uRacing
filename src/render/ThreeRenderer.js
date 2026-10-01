@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 export class ThreeRenderer {
   constructor(canvasWidth, canvasHeight) {
@@ -39,34 +37,9 @@ export class ThreeRenderer {
     this.carMeshes = new Map();
     this.trackMeshes = [];
     this.garageMode = false;
-    
-    this.carModelTemplate = null;
-    const loader = new GLTFLoader();
 
-    // Setup Draco loader for compressed GLBs
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://unpkg.com/three@0.128.0/examples/js/libs/draco/gltf/');
-    loader.setDRACOLoader(dracoLoader);
-
-    loader.load('public/models/sedan.glb', (gltf) => {
-      this.carModelTemplate = gltf.scene;
-      const box = new THREE.Box3().setFromObject(this.carModelTemplate);
-      const size = box.getSize(new THREE.Vector3());
-      const scale = 34 / size.z;
-      this.carModelTemplate.scale.set(scale, scale, scale);
-      
-      const center = box.getCenter(new THREE.Vector3());
-      this.carModelTemplate.children.forEach(c => {
-        c.position.sub(center);
-        c.position.y += size.y / 2;
-      });
-      
-      for (const [id, carData] of this.carMeshes.entries()) {
-         if (carData.isPlaceholder) {
-            this.createCar(id, carData.carRef);
-         }
-      }
-    }, undefined, (e) => console.error("Failed to load car model:", e));
+    this.trackCurve = null;
+    this.cameraLookAt = new THREE.Vector3();
   }
 
   resize(w, h) {
@@ -74,8 +47,6 @@ export class ThreeRenderer {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
-
-  // ... (unchanged methods) ...
 
   render() {
     this.renderer.render(this.scene, this.camera);
@@ -95,8 +66,20 @@ export class ThreeRenderer {
 
     if (!splineSamples || splineSamples.length === 0) return;
 
-    const pts = splineSamples.map(s => new THREE.Vector3(s.point.x, 0, s.point.y));
+    // Add jumps/elevation based on progress
+    const totalLen = splineSamples.length;
+    const pts = splineSamples.map((s, idx) => {
+        const progress = idx / totalLen;
+        // Add a jump in the middle of the track (progress 0.4 to 0.6)
+        let elevation = 0;
+        if (progress > 0.3 && progress < 0.7) {
+            elevation = Math.sin((progress - 0.3) * Math.PI / 0.4) * 45; // 45 units high jump
+        }
+        return new THREE.Vector3(s.point.x, elevation, s.point.y);
+    });
+    
     const curve = new THREE.CatmullRomCurve3(pts, true);
+    this.trackCurve = curve;
     
     const trackWidth = trackConfig.trackWidth || 140;
     
@@ -159,62 +142,65 @@ export class ThreeRenderer {
 
   createCar(id, car) {
     if (this.carMeshes.has(id)) {
-        if (!this.carMeshes.get(id).isPlaceholder) return;
         this.scene.remove(this.carMeshes.get(id).group);
     }
 
-    if (!this.carModelTemplate) {
-        const group = new THREE.Group();
-        const geom = new THREE.BoxGeometry(car.width, 10, car.length);
-        const mat = new THREE.MeshLambertMaterial({ color: car.spec.color });
-        const mesh = new THREE.Mesh(geom, mat);
-        mesh.position.y = 5;
-        group.add(mesh);
-        this.scene.add(group);
-        this.carMeshes.set(id, { group, isPlaceholder: true, carRef: car });
-        return;
-    }
-
     const group = new THREE.Group();
-    const model = this.carModelTemplate.clone();
     
     const toyMaterialBody = new THREE.MeshPhysicalMaterial({
         color: car.spec.color,
-        metalness: 0.2,
+        metalness: 0.1,
         roughness: 0.1,
-        clearcoat: 1.0,
+        clearcoat: 0.8,
         clearcoatRoughness: 0.1
     });
 
     const toyGlass = new THREE.MeshPhysicalMaterial({
         color: 0x111111,
-        metalness: 0.9,
-        roughness: 0.1,
-        transparent: true,
-        opacity: 0.8
+        metalness: 0.8,
+        roughness: 0.2
     });
-
-    // Make it look like a glossy die-cast toy
-    model.traverse((child) => {
-        if (child.isMesh) {
-            if (child.material.name && child.material.name.toLowerCase().includes('body')) {
-                child.material = toyMaterialBody;
-            } else if (child.material.name && child.material.name.toLowerCase().includes('glass')) {
-                child.material = toyGlass;
-            } else if (child.material) {
-                // Make all other parts look like cheap plastic
-                child.material.roughness = 0.8;
-                child.material.metalness = 0.1;
-            }
-        }
-    });
-
-    // Fix backwards orientation (was Math.PI / 2)
-    model.rotation.y = -Math.PI / 2;
     
-    group.add(model);
+    // Procedural Low Poly Chassis
+    // Dimensions based on car stats to make them unique
+    const width = car.spec.width || 18;
+    const length = car.spec.length || 34;
+    const height = 10;
+    const chassisGeo = new THREE.BoxGeometry(length, height, width);
+    const chassis = new THREE.Mesh(chassisGeo, toyMaterialBody);
+    chassis.position.y = height / 2 + 4; // Lift above wheels
+    
+    // Procedural Low Poly Cabin
+    const cabinGeo = new THREE.BoxGeometry(length - 12, height - 2, width - 4);
+    const cabin = new THREE.Mesh(cabinGeo, toyGlass);
+    cabin.position.y = height + 4;
+    cabin.position.x = -2; // Slightly towards rear
+    
+    // Procedural Wheels
+    const wheelGeo = new THREE.CylinderGeometry(4, 4, width + 2, 8);
+    wheelGeo.rotateX(Math.PI / 2); // Rotate to align cylinder along Z axis
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    
+    const frontWheels = new THREE.Mesh(wheelGeo, wheelMat);
+    frontWheels.position.set(length / 2 - 6, 4, 0);
+    
+    const backWheels = new THREE.Mesh(wheelGeo, wheelMat);
+    backWheels.position.set(-length / 2 + 6, 4, 0);
+
+    // Front headlights for detail
+    const lightGeo = new THREE.BoxGeometry(2, 2, width - 6);
+    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const headlights = new THREE.Mesh(lightGeo, lightMat);
+    headlights.position.set(length / 2, height/2 + 4, 0);
+
+    group.add(chassis);
+    group.add(cabin);
+    group.add(frontWheels);
+    group.add(backWheels);
+    group.add(headlights);
+    
     this.scene.add(group);
-    this.carMeshes.set(id, { group, isPlaceholder: false });
+    this.carMeshes.set(id, { group });
   }
 
   updateCar(id, car) {
@@ -225,7 +211,22 @@ export class ThreeRenderer {
     }
     
     const group = meshObj.group;
-    group.position.set(car.body.position.x, 0, car.body.position.y);
+    
+    // Calculate elevation based on track curve raycast
+    let elevation = 0;
+    if (this.trackCurve && this.trackMeshes.length > 1) {
+        const raycaster = new THREE.Raycaster(
+            new THREE.Vector3(car.body.position.x, 500, car.body.position.y),
+            new THREE.Vector3(0, -1, 0)
+        );
+        const intersects = raycaster.intersectObject(this.trackMeshes[1]);
+        if (intersects.length > 0) {
+            elevation = intersects[0].point.y;
+        }
+    }
+    
+    // Lift car slightly to perfectly rest wheels on track
+    group.position.set(car.body.position.x, elevation, car.body.position.y);
     group.rotation.y = -car.body.angle; 
   }
 
@@ -255,7 +256,10 @@ export class ThreeRenderer {
             if (id !== 'preview') mesh.group.visible = false;
         });
         
-        this.updateCar('preview', previewCar);
+        if (this.currentPreviewId !== previewCar.spec.id) {
+            this.createCar('preview', previewCar);
+            this.currentPreviewId = previewCar.spec.id;
+        }
         let pMesh = this.carMeshes.get('preview');
         pMesh.group.visible = true;
         
@@ -285,26 +289,26 @@ export class ThreeRenderer {
     const chaseDist = 120;
     const height = 50;
     
-    const carPos = new THREE.Vector3(car.body.position.x, 0, car.body.position.y);
+    const carGroup = this.carMeshes.get('player')?.group;
+    if (!carGroup) return;
+    
+    const carPos = carGroup.position.clone();
     const angle = -car.body.angle;
     
     const dx = Math.cos(angle) * -chaseDist;
     const dz = Math.sin(angle) * -chaseDist;
     
-    const idealPos = new THREE.Vector3(carPos.x + dx, height, carPos.z + dz);
+    const idealPos = new THREE.Vector3(carPos.x + dx, carPos.y + height, carPos.z + dz);
     
-    this.camera.position.lerp(idealPos, 5.0 * dt);
+    // Slower lerp for a much smoother, less aggressive follow
+    this.camera.position.lerp(idealPos, 3.5 * dt);
     
     const lookAtPos = new THREE.Vector3(
         carPos.x + Math.cos(angle) * 50,
-        0,
+        carPos.y,
         carPos.z + Math.sin(angle) * 50
     );
-    this.camera.lookAt(lookAtPos);
-  }
-
-  render() {
-    // 2000s games often jitter the camera or we can just render the composer
-    this.renderer.render(this.scene, this.camera);
+    this.cameraLookAt.lerp(lookAtPos, 6.0 * dt);
+    this.camera.lookAt(this.cameraLookAt);
   }
 }
