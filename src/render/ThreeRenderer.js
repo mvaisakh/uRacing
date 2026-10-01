@@ -174,18 +174,39 @@ export class ThreeRenderer {
     const group = new THREE.Group();
     const model = this.carModelTemplate.clone();
     
-    // Tint the body if the model supports it
+    const toyMaterialBody = new THREE.MeshPhysicalMaterial({
+        color: car.spec.color,
+        metalness: 0.2,
+        roughness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1
+    });
+
+    const toyGlass = new THREE.MeshPhysicalMaterial({
+        color: 0x111111,
+        metalness: 0.9,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.8
+    });
+
+    // Make it look like a glossy die-cast toy
     model.traverse((child) => {
         if (child.isMesh) {
             if (child.material.name && child.material.name.toLowerCase().includes('body')) {
-                // clone material to not affect others
-                child.material = child.material.clone();
-                child.material.color.set(car.spec.color);
+                child.material = toyMaterialBody;
+            } else if (child.material.name && child.material.name.toLowerCase().includes('glass')) {
+                child.material = toyGlass;
+            } else if (child.material) {
+                // Make all other parts look like cheap plastic
+                child.material.roughness = 0.8;
+                child.material.metalness = 0.1;
             }
         }
     });
 
-    model.rotation.y = Math.PI / 2;
+    // Fix backwards orientation (was Math.PI / 2)
+    model.rotation.y = -Math.PI / 2;
     
     group.add(model);
     this.scene.add(group);
