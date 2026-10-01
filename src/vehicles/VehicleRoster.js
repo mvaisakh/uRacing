@@ -5,33 +5,33 @@
 export const VEHICLE_ROSTER = {
   detroit_bruiser: {
     id: 'detroit_bruiser',
-    name: 'Detroit Bruiser',
-    era: '1969 American Muscle',
-    description: 'High top speed, heavy curb weight, and prone to muscle oversteer.',
+    name: 'Bavarian Sedan',
+    era: 'Dark Green Executive',
+    description: 'High top speed, heavy curb weight, and classic sedan styling.',
     cost: 0, // Starter car
-    color: '#d63031',
+    color: '#1b3e34', // Dark green sedan
     accentColor: '#ffffff',
-    stripeColor: '#2d3436',
+    stripeColor: null,
     stats: {
-      topSpeed: 420,       // Max forward velocity
-      acceleration: 380,   // Engine drive force
-      braking: 450,        // Brake force
-      weight: 1.4,         // Heavy feel
-      steerRate: 2.8,      // Turn responsiveness
-      grip: 0.82,          // Lateral tire friction
-      driftFactor: 0.94    // Lateral sliding retention
+      topSpeed: 420,
+      acceleration: 380,
+      braking: 450,
+      weight: 1.4,
+      steerRate: 2.8,
+      grip: 0.82,
+      driftFactor: 0.94
     }
   },
 
   stuttgart_arrow: {
     id: 'stuttgart_arrow',
-    name: 'Stuttgart Arrow',
-    era: '1980s Rear-Engine Classic',
-    description: 'Rear-engine weight bias, snappy lift-off oversteer and razor agility.',
+    name: 'Britania Grand Tourer',
+    era: 'Sleek Grey Sports Car',
+    description: 'Front-engine weight bias, snappy lift-off oversteer and razor agility.',
     cost: 500,
-    color: '#dfe6e9',
+    color: '#8b9bad', // Grey sports car
     accentColor: '#0984e3',
-    stripeColor: '#d63031',
+    stripeColor: null,
     stats: {
       topSpeed: 440,
       acceleration: 420,
@@ -45,13 +45,13 @@ export const VEHICLE_ROSTER = {
 
   tokyo_drift_king: {
     id: 'tokyo_drift_king',
-    name: 'Tokyo Drift-King',
-    era: '1990s AWD Turbo Legend',
+    name: 'Midnight Hatchback',
+    era: 'Dark Blue Compact',
     description: 'Balanced AWD handling, immense turbo acceleration and controllable slides.',
     cost: 850,
-    color: '#0984e3',
+    color: '#283c63', // Dark blue
     accentColor: '#00cec9',
-    stripeColor: '#ffffff',
+    stripeColor: null,
     stats: {
       topSpeed: 430,
       acceleration: 480,
@@ -65,19 +65,19 @@ export const VEHICLE_ROSTER = {
 
   maranello_rosso: {
     id: 'maranello_rosso',
-    name: 'Maranello Rosso',
-    era: '1980s Wedge Supercar',
-    description: 'Wedge-shaped aerodynamic icon with extreme top speed and low clearance.',
+    name: 'Alpine SUV',
+    era: 'Modern White Utility',
+    description: 'A heavy luxury SUV with extreme top speed but slow turning.',
     cost: 1200,
-    color: '#e84118',
+    color: '#f1f2f6', // White SUV
     accentColor: '#fbc531',
     stripeColor: '#2f3640',
     stats: {
       topSpeed: 480,
       acceleration: 440,
       braking: 540,
-      weight: 1.0,
-      steerRate: 3.1,
+      weight: 1.8,
+      steerRate: 2.1,
       grip: 0.87,
       driftFactor: 0.93
     }
@@ -85,13 +85,13 @@ export const VEHICLE_ROSTER = {
 
   group_b_monster: {
     id: 'group_b_monster',
-    name: 'Group B Monster',
-    era: '1980s Rally Homologation',
-    description: 'Explosive boost, supreme all-terrain grip, and aggressive micro-chassis.',
+    name: 'City Commuter',
+    era: 'Light Blue Mini',
+    description: 'Explosive boost, supreme all-terrain grip, and nimble micro-chassis.',
     cost: 1500,
-    color: '#f5f6fa',
+    color: '#85a7bd', // Light blue hatch
     accentColor: '#e1b12c',
-    stripeColor: '#44bd32',
+    stripeColor: null,
     stats: {
       topSpeed: 435,
       acceleration: 520,

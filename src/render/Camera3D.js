@@ -14,13 +14,13 @@ export class Camera3D {
     this.targetAngle = 0;
 
     // Camera chase distances
-    this.chaseDistance = 140; // Behind the vehicle
-    this.elevation = 75;      // Height above the track surface
-    this.pitch = 0.58;        // Perspective squashing pitch (pseudo-3D angle)
-    this.fovScale = 1.0;
+    this.chaseDistance = 85;  // Closer to the vehicle
+    this.elevation = 40;      // Height above the track surface
+    this.pitch = 0.40;        // Lower perspective squashing pitch (less aerial)
+    this.fovScale = 1.2;
 
-    this.smoothPos = 8.0;
-    this.smoothRot = 6.0;
+    this.smoothPos = 10.0;
+    this.smoothRot = 8.0;
   }
 
   resize(w, h) {
@@ -57,8 +57,8 @@ export class Camera3D {
    */
   begin(ctx) {
     ctx.save();
-    // Center point shifted slightly down to allow view of the horizon ahead
-    ctx.translate(this.viewportWidth / 2, this.viewportHeight * 0.62);
+    // Center point shifted further down to allow more view of the horizon ahead
+    ctx.translate(this.viewportWidth / 2, this.viewportHeight * 0.75);
 
     // Apply 3D perspective tilt (pitch down looking forward)
     ctx.scale(this.fovScale, this.fovScale * this.pitch);

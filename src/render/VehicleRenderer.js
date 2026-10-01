@@ -44,160 +44,211 @@ export class VehicleRenderer {
     this._drawRoundedRect(ctx, -hw + 1, -hl + 2, width - 2, length - 4, 3);
     ctx.fill();
 
-    // 4. Low-Poly Faceted Chassis Slices (Extruded 3D body with bevelled facets)
-    const totalSlices = 5;
-    for (let slice = 0; slice < totalSlices; slice++) {
-      // Local +Y points visually UP in chase cam, so use positive offset
-      const zOffset = slice * 1.6; 
-      const lightFactor = -18 + slice * 8;
+    // 4. Low-Poly 3D Slices
+    const zSpacing = 1.8;
+    
+    // Chassis Slices
+    const chassisSlices = 4;
+    for (let slice = 0; slice < chassisSlices; slice++) {
+      const zOffset = slice * zSpacing; 
+      const lightFactor = -15 + slice * 6;
       const baseColor = this._adjustBrightness(spec.color, lightFactor);
 
       ctx.save();
       ctx.translate(0, zOffset);
-
-      // Low-poly faceted body shell
-      this._renderCarBodyMesh(ctx, hw, hl, baseColor, spec.id);
-
-      // Topmost layer details: Hood vents, rear wing, cockpit, headlights
-      if (slice === totalSlices - 1) {
-        this._renderCarTopDetails(ctx, hw, hl, spec, car);
+      this._renderChassisMesh(ctx, hw, hl, baseColor, spec.id);
+      
+      // Details on the top chassis slice (hood, headlights, taillights)
+      if (slice === chassisSlices - 1) {
+        this._renderChassisDetails(ctx, hw, hl, spec, car);
       }
+      ctx.restore();
+    }
 
+    // Cabin Slices (Windows & Roof)
+    const cabinSlices = 4;
+    for (let slice = 0; slice < cabinSlices; slice++) {
+      const zOffset = (chassisSlices + slice) * zSpacing; 
+      const lightFactor = -5 + slice * 5;
+      
+      ctx.save();
+      ctx.translate(0, zOffset);
+      
+      // The cabin shape is smaller than the chassis
+      this._renderCabinMesh(ctx, hw, hl, spec, slice, cabinSlices, lightFactor);
+      
+      if (slice === cabinSlices - 1) {
+        this._renderRoofDetails(ctx, hw, hl, spec);
+      }
+      
       ctx.restore();
     }
 
     ctx.restore();
   }
 
-  static _renderCarBodyMesh(ctx, hw, hl, color, carId) {
-    // Faceted low-poly panel lighting
+  static _renderChassisMesh(ctx, hw, hl, color, carId) {
     ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.lineWidth = 1.0;
 
-    // Different silhouette shapes per automotive era
     ctx.beginPath();
-    if (carId === 'maranello_rosso') {
-      // Wedge Supercar geometry (Narrow nose, flared rear air intakes)
-      ctx.moveTo(-hw * 0.65, hl);
-      ctx.lineTo(hw * 0.65, hl);
-      ctx.lineTo(hw, hl * 0.2);
-      ctx.lineTo(hw * 1.05, -hl * 0.6);
-      ctx.lineTo(hw * 0.9, -hl);
-      ctx.lineTo(-hw * 0.9, -hl);
-      ctx.lineTo(-hw * 1.05, -hl * 0.6);
-      ctx.lineTo(-hw, hl * 0.2);
-    } else if (carId === 'group_b_monster') {
-      // Boxy Rally Homologation (Flared box fenders)
-      ctx.moveTo(-hw * 0.85, hl);
-      ctx.lineTo(hw * 0.85, hl);
-      ctx.lineTo(hw * 1.08, hl * 0.6);
-      ctx.lineTo(hw * 1.08, hl * 0.3);
-      ctx.lineTo(hw * 0.9, 0);
-      ctx.lineTo(hw * 1.08, -hl * 0.4);
-      ctx.lineTo(hw * 1.08, -hl * 0.8);
-      ctx.lineTo(hw * 0.85, -hl);
-      ctx.lineTo(-hw * 0.85, -hl);
-      ctx.lineTo(-hw * 1.08, -hl * 0.8);
-      ctx.lineTo(-hw * 1.08, -hl * 0.4);
-      ctx.lineTo(-hw * 0.9, 0);
-      ctx.lineTo(-hw * 1.08, hl * 0.3);
-      ctx.lineTo(-hw * 1.08, hl * 0.6);
-    } else {
-      // Classic Muscle / Sports GT
+    if (carId === 'maranello_rosso' || carId === 'stuttgart_arrow') {
+      // Sports/Supercar (Wedge/Sleek)
       ctx.moveTo(-hw * 0.8, hl);
       ctx.lineTo(hw * 0.8, hl);
-      ctx.lineTo(hw, hl * 0.4);
+      ctx.lineTo(hw, hl * 0.5);
+      ctx.lineTo(hw * 1.05, -hl * 0.7);
+      ctx.lineTo(hw * 0.85, -hl);
+      ctx.lineTo(-hw * 0.85, -hl);
+      ctx.lineTo(-hw * 1.05, -hl * 0.7);
+      ctx.lineTo(-hw, hl * 0.5);
+    } else if (carId === 'group_b_monster') {
+      // Hot Hatch / Rally (Boxy, wide fenders)
+      ctx.moveTo(-hw * 0.9, hl * 0.9);
+      ctx.lineTo(hw * 0.9, hl * 0.9);
+      ctx.lineTo(hw * 1.1, hl * 0.5);
+      ctx.lineTo(hw * 0.95, 0);
+      ctx.lineTo(hw * 1.1, -hl * 0.6);
+      ctx.lineTo(hw * 0.9, -hl * 0.9);
+      ctx.lineTo(-hw * 0.9, -hl * 0.9);
+      ctx.lineTo(-hw * 1.1, -hl * 0.6);
+      ctx.lineTo(-hw * 0.95, 0);
+      ctx.lineTo(-hw * 1.1, hl * 0.5);
+    } else {
+      // Sedan / Muscle (Standard)
+      ctx.moveTo(-hw * 0.85, hl * 0.95);
+      ctx.lineTo(hw * 0.85, hl * 0.95);
+      ctx.lineTo(hw, hl * 0.6);
       ctx.lineTo(hw, -hl * 0.8);
       ctx.lineTo(hw * 0.85, -hl);
       ctx.lineTo(-hw * 0.85, -hl);
       ctx.lineTo(-hw, -hl * 0.8);
-      ctx.lineTo(-hw, hl * 0.4);
+      ctx.lineTo(-hw, hl * 0.6);
     }
     ctx.closePath();
     ctx.fill();
-    ctx.stroke();
-
-    // Central low-poly hood ridge line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 1.0;
-    ctx.beginPath();
-    ctx.moveTo(0, hl * 0.8);
-    ctx.lineTo(0, -hl * 0.8);
     ctx.stroke();
   }
 
-  static _renderCarTopDetails(ctx, hw, hl, spec, car) {
-    // 1. Racing livery stripe
+  static _renderChassisDetails(ctx, hw, hl, spec, car) {
+    // Front Grille
+    ctx.fillStyle = '#111';
+    if (spec.id === 'detroit_bruiser') {
+      ctx.fillRect(-hw * 0.5, hl * 0.9, hw, hl * 0.1);
+    } else if (spec.id === 'stuttgart_arrow') {
+      // No front grille
+    } else {
+      ctx.fillRect(-hw * 0.4, hl * 0.9, hw * 0.8, hl * 0.1);
+    }
+
+    // Racing Stripes
     if (spec.stripeColor) {
       ctx.fillStyle = spec.stripeColor;
-      ctx.fillRect(-2.5, -hl + 3, 5, hl * 2 - 6);
+      ctx.fillRect(-2, -hl * 0.9, 4, hl * 1.8);
     }
 
-    // 2. Low-Poly Cabin Cockpit Glass
-    const cabinW = hw * 1.35;
-    const cabinL = hl * 0.95;
-    const cabinY = -cabinL * 0.35;
-
-    // Windshield frame
-    ctx.fillStyle = '#14181f';
-    ctx.beginPath();
-    ctx.moveTo(-cabinW * 0.42, cabinY + cabinL * 0.9);
-    ctx.lineTo(cabinW * 0.42, cabinY + cabinL * 0.9);
-    ctx.lineTo(cabinW * 0.5, cabinY);
-    ctx.lineTo(-cabinW * 0.5, cabinY);
-    ctx.closePath();
-    ctx.fill();
-
-    // Windshield tinted glass with specular shine
-    const glassGrad = ctx.createLinearGradient(0, cabinY + cabinL * 0.85, 0, cabinY + cabinL * 0.3);
-    glassGrad.addColorStop(0, '#2980b9');
-    glassGrad.addColorStop(0.5, '#54a0ff');
-    glassGrad.addColorStop(1, '#c8d6e5');
-    ctx.fillStyle = glassGrad;
-    ctx.beginPath();
-    ctx.moveTo(-cabinW * 0.38, cabinY + cabinL * 0.85);
-    ctx.lineTo(cabinW * 0.38, cabinY + cabinL * 0.85);
-    ctx.lineTo(cabinW * 0.44, cabinY + cabinL * 0.35);
-    ctx.lineTo(-cabinW * 0.44, cabinY + cabinL * 0.35);
-    ctx.closePath();
-    ctx.fill();
-
-    // Roof panel
-    ctx.fillStyle = this._adjustBrightness(spec.color, 15);
-    ctx.fillRect(-cabinW * 0.4, cabinY + cabinL * 0.05, cabinW * 0.8, cabinL * 0.32);
-
-    // Rear window
-    ctx.fillStyle = '#222f3e';
-    ctx.beginPath();
-    ctx.moveTo(-cabinW * 0.38, cabinY + cabinL * 0.05);
-    ctx.lineTo(cabinW * 0.38, cabinY + cabinL * 0.05);
-    ctx.lineTo(cabinW * 0.45, cabinY - cabinL * 0.22);
-    ctx.lineTo(-cabinW * 0.45, cabinY - cabinL * 0.22);
-    ctx.closePath();
-    ctx.fill();
-
-    // 3. Aerodynamic Rear Wing / Spoiler (Group B & Tokyo Drift-King)
-    if (spec.id === 'group_b_monster' || spec.id === 'tokyo_drift_king' || spec.id === 'stuttgart_arrow') {
-      ctx.fillStyle = '#11141a';
-      // Wing struts
-      ctx.fillRect(-hw * 0.65, -hl - 1, 3, 4);
-      ctx.fillRect(hw * 0.65 - 3, -hl - 1, 3, 4);
-      // Wing foil blade
-      ctx.fillStyle = spec.id === 'group_b_monster' ? '#e1b12c' : '#222f3e';
-      ctx.fillRect(-hw * 0.9, -hl - 3, hw * 1.8, 3.5);
-    }
-
-    // 4. Xenon Headlight lenses
+    // Headlights
     ctx.fillStyle = '#fffbc8';
-    ctx.fillRect(-hw + 3, hl - 2.5, 4, 2);
-    ctx.fillRect(hw - 7, hl - 2.5, 4, 2);
+    if (spec.id === 'maranello_rosso') {
+      // Pop-up headlights style
+      ctx.fillRect(-hw * 0.8, hl * 0.6, hw * 0.4, hl * 0.15);
+      ctx.fillRect(hw * 0.4, hl * 0.6, hw * 0.4, hl * 0.15);
+    } else {
+      ctx.beginPath();
+      ctx.arc(-hw * 0.6, hl * 0.85, 2, 0, Math.PI * 2);
+      ctx.arc(hw * 0.6, hl * 0.85, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-    // 5. LED Taillights (Red glow, bright on brake / drift)
+    // Taillights
     const isBraking = car.forwardVelocity < -1 || car.isDrifting;
     ctx.fillStyle = isBraking ? '#ff3838' : '#c0392b';
-    ctx.fillRect(-hw + 3, -hl, 4, 2);
-    ctx.fillRect(hw - 7, -hl, 4, 2);
+    ctx.fillRect(-hw * 0.8, -hl * 0.95, hw * 0.5, hl * 0.15);
+    ctx.fillRect(hw * 0.3, -hl * 0.95, hw * 0.5, hl * 0.15);
+    
+    // Rear Wing / Spoiler
+    if (spec.id === 'group_b_monster' || spec.id === 'tokyo_drift_king' || spec.id === 'maranello_rosso') {
+      ctx.fillStyle = '#11141a';
+      ctx.fillRect(-hw * 0.9, -hl * 0.9, hw * 1.8, hl * 0.2);
+    }
+  }
+
+  static _renderCabinMesh(ctx, hw, hl, spec, sliceIdx, maxSlices, lightFactor) {
+    // Cabin tapers inwards slightly as it goes up
+    const taper = 1.0 - (sliceIdx / maxSlices) * 0.15;
+    const cW = hw * 0.75 * taper;
+    
+    // Different cars have different cabin lengths
+    let cL_front = hl * 0.2;
+    let cL_rear = -hl * 0.6;
+    
+    if (spec.id === 'detroit_bruiser') {
+      // Long hood, short rear deck
+      cL_front = hl * 0.1;
+      cL_rear = -hl * 0.7;
+    } else if (spec.id === 'stuttgart_arrow' || spec.id === 'maranello_rosso') {
+      // Sloping fastback
+      cL_front = hl * 0.3;
+      cL_rear = -hl * 0.8;
+    } else if (spec.id === 'group_b_monster') {
+      // Hatchback shape
+      cL_front = hl * 0.4;
+      cL_rear = -hl * 0.9;
+    }
+
+    // Check if this slice is rendering windows (middle slices) or roof (top slices)
+    const isWindowSlice = sliceIdx < maxSlices - 1;
+    
+    if (isWindowSlice) {
+      // Draw pillars and windows
+      ctx.fillStyle = '#111'; // Window color
+      ctx.beginPath();
+      ctx.moveTo(-cW, cL_front);
+      ctx.lineTo(cW, cL_front);
+      ctx.lineTo(cW * 0.9, cL_rear);
+      ctx.lineTo(-cW * 0.9, cL_rear);
+      ctx.fill();
+      
+      // Draw Pillars
+      ctx.fillStyle = spec.color;
+      // A-Pillar
+      ctx.fillRect(-cW, cL_front - 2, 2, 4);
+      ctx.fillRect(cW - 2, cL_front - 2, 2, 4);
+      // B-Pillar
+      ctx.fillRect(-cW * 0.95, (cL_front + cL_rear) / 2, 2, 4);
+      ctx.fillRect(cW * 0.95 - 2, (cL_front + cL_rear) / 2, 2, 4);
+      // C-Pillar
+      ctx.fillRect(-cW * 0.9, cL_rear - 1, 2, 4);
+      ctx.fillRect(cW * 0.9 - 2, cL_rear - 1, 2, 4);
+      
+    } else {
+      // Draw solid roof
+      ctx.fillStyle = this._adjustBrightness(spec.color, lightFactor);
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.moveTo(-cW, cL_front);
+      ctx.lineTo(cW, cL_front);
+      ctx.lineTo(cW * 0.9, cL_rear);
+      ctx.lineTo(-cW * 0.9, cL_rear);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  static _renderRoofDetails(ctx, hw, hl, spec) {
+    // Sunroof for some cars
+    if (spec.id === 'tokyo_drift_king' || spec.id === 'detroit_bruiser') {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(-hw * 0.4, -hl * 0.2, hw * 0.8, hl * 0.3);
+    }
+    
+    // Roof scoop
+    if (spec.id === 'group_b_monster') {
+      ctx.fillStyle = '#222';
+      ctx.fillRect(-hw * 0.2, hl * 0.1, hw * 0.4, hl * 0.2);
+    }
   }
 
   static _drawWheelLowPoly(ctx, x, y, w, l, angle) {
