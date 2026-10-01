@@ -119,7 +119,7 @@ export class GarageUI {
     ctx.save();
     ctx.translate(0, -6);
     ctx.scale(2.6, 2.6);
-    VehicleRenderer.render(ctx, this.previewCar);
+    // VehicleRenderer.render(ctx, this.previewCar);
     ctx.restore();
 
     ctx.restore();

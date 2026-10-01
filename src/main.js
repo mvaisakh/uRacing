@@ -5,6 +5,7 @@ import { GameState } from './core/GameState.js';
 import { VEHICLE_ROSTER } from './vehicles/VehicleRoster.js';
 import { Car } from './vehicles/Car.js';
 import { Camera3D } from './render/Camera3D.js';
+import { ThreeRenderer } from './render/ThreeRenderer.js';
 import { VehicleRenderer } from './render/VehicleRenderer.js';
 import { ParticleSystem } from './render/ParticleSystem.js';
 import { Vec2 } from './math/Vec2.js';
@@ -53,6 +54,7 @@ function initGame() {
   const gameState = new GameState(storage);
   const input = new InputHandler();
   const camera = new Camera3D(canvas.width, canvas.height);
+  const threeRenderer = new ThreeRenderer(canvas.width, canvas.height);
   const cameraShake = new CameraShake();
   const particles = new ParticleSystem();
   const sounds = new SoundSystem();
@@ -77,21 +79,15 @@ function initGame() {
   window.addEventListener('resize', () => {
     resizeCanvas();
     camera.resize(canvas.width, canvas.height);
+    threeRenderer.resize(canvas.width, canvas.height);
   });
 
   let currentScreen = 'GARAGE';
   let currentTrackKey = 'kitchen_countertop';
-  let trackConfig = TRACK_ROSTER[currentTrackKey];
-  let spline = new CatmullRomSpline(trackConfig.waypoints, true);
-  let splineSamples = spline.sampleEvenly(12);
-  let trackRibbon = new TrackRibbon(splineSamples, trackConfig.trackWidth);
-  let trackBarriers = new TrackBarriers(trackRibbon);
-  let surfaceManager = new SurfaceManager(splineSamples, trackConfig.trackWidth / 2);
-  let checkpointSystem = new CheckpointSystem(splineSamples, trackConfig.trackWidth / 2, 8);
+  let trackConfig, spline, splineSamples, trackRibbon, trackBarriers;
+  let surfaceManager, checkpointSystem, propManager, minimap;
   let lapTimer = new LapTimer();
   let rubberBanding = new RubberBanding();
-  let propManager = new PropManager(trackConfig.environment);
-  let minimap = new Minimap(splineSamples, 170);
 
   let playerCar = null;
   let playerTracker = null;
@@ -119,8 +115,10 @@ function initGame() {
     checkpointSystem = new CheckpointSystem(splineSamples, trackConfig.trackWidth / 2, 8);
     propManager = new PropManager(trackConfig.environment);
     minimap = new Minimap(splineSamples, 170);
-    raceManager.totalLaps = trackConfig.laps;
+    if (raceManager) raceManager.totalLaps = trackConfig.laps;
+    threeRenderer.buildEnvironment(trackConfig, splineSamples, trackBarriers, propManager);
   }
+  setupTrack(currentTrackKey);
 
   function startRaceSession() {
     const playerSpec = VEHICLE_ROSTER[gameState.profile.selectedCar] || VEHICLE_ROSTER.detroit_bruiser;
@@ -303,60 +301,44 @@ function initGame() {
         barrierCount: trackBarriers ? trackBarriers.barriers.length : 0
       };
 
+      // Clear 2D canvas so WebGL shows through
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       if (currentScreen === 'GARAGE') {
+        threeRenderer.setGarageMode(true, garageUI.previewCar);
+        threeRenderer.render();
         garageUI.render(ctx, canvas.width, canvas.height);
         diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
         return;
       }
+      
+      threeRenderer.setGarageMode(false);
+
       if (currentScreen === 'TRACK_SELECT') {
         trackSelectUI.render(ctx, canvas.width, canvas.height);
         diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
         return;
       }
 
-      ctx.fillStyle = trackConfig.bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Apply Camera Follow + Trauma Shake
-      camera.begin(ctx);
+      // Apply shake to Three.js camera (if needed, but skip for now to ensure stability)
       const shake = cameraShake.getOffset();
+      
+      if (playerCar) threeRenderer.updateCar('player', playerCar);
+      if (aiCar) threeRenderer.updateCar('ai', aiCar);
+      
+      // Update camera
+      if (playerCar) {
+         threeRenderer.updateCamera(playerCar, loop.dt);
+      }
+      
+      threeRenderer.render();
+      
+      // Render particles on 2D canvas (overlay)
+      camera.begin(ctx);
       ctx.translate(shake.x, shake.y);
       ctx.rotate(shake.angle);
-
-      // Draw Wooden Floor Grid
-      ctx.save();
-      const gridSize = 160;
-      // In Camera3D, scale is fovScale.
-      const scale = camera.fovScale || 1.0;
-      const startX = Math.floor((camera.position.x - canvas.width / scale) / gridSize) * gridSize - gridSize * 2;
-      const endX = Math.ceil((camera.position.x + canvas.width / scale) / gridSize) * gridSize + gridSize * 2;
-      const startY = Math.floor((camera.position.y - canvas.height / scale) / gridSize) * gridSize - gridSize * 2;
-      const endY = Math.ceil((camera.position.y + canvas.height / scale) / gridSize) * gridSize + gridSize * 2;
-
-      for (let x = startX; x <= endX; x += gridSize) {
-        for (let y = startY; y <= endY; y += gridSize) {
-          const isDark = (Math.abs(x / gridSize) + Math.abs(y / gridSize)) % 2 === 0;
-          ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.02)';
-          ctx.fillRect(x, y, gridSize, gridSize);
-        }
-      }
-      ctx.restore();
-
-      // World Props, Track, Skidmarks
-      propManager.render(ctx);
-      trackRibbon.render(ctx);
-      trackBarriers.render(ctx);
       particles.render(ctx);
-
-      // Exhaust nitro flames if active
-      if (nitro.isActive) {
-        NitroFlames.render(ctx, playerCar);
-      }
-
-      // Vehicles
-      VehicleRenderer.render(ctx, aiCar);
-      VehicleRenderer.render(ctx, playerCar);
-
+      if (nitro.isActive && playerCar) NitroFlames.render(ctx, playerCar);
       camera.end(ctx);
 
       // --- Screen Space HUD ---
