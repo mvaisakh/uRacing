@@ -33,6 +33,7 @@ import { NitroFlames } from './render/NitroFlames.js';
 import { AudioSFXManager } from './audio/AudioSFXManager.js';
 import { TouchControls } from './ui/TouchControls.js';
 import { PerformanceMonitor } from './core/PerformanceMonitor.js';
+import { EngineDiagnostics } from './core/Diagnostics.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
@@ -60,6 +61,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const nitro = new NitroSystem();
   const touchControls = new TouchControls(input);
   const perfMon = new PerformanceMonitor();
+  const diagnostics = new EngineDiagnostics();
 
   const unlockAudio = () => {
     sounds.init();
@@ -291,12 +293,24 @@ window.addEventListener('DOMContentLoaded', () => {
     },
 
     render: (interp) => {
+      const runtimeData = {
+        fps: loop.fps,
+        currentScreen,
+        carName: playerCar ? playerCar.spec.name : garageUI.getCurrentCar().name,
+        trackName: trackConfig.name,
+        audioActive: sounds.initialized,
+        particleCount: particles.particles.length,
+        barrierCount: trackBarriers ? trackBarriers.barriers.length : 0
+      };
+
       if (currentScreen === 'GARAGE') {
         garageUI.render(ctx, canvas.width, canvas.height);
+        diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
         return;
       }
       if (currentScreen === 'TRACK_SELECT') {
         trackSelectUI.render(ctx, canvas.width, canvas.height);
+        diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
         return;
       }
 
@@ -385,6 +399,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Race countdown / Finish overlay
       raceManager.renderOverlay(ctx, canvas.width, canvas.height);
+
+      // Diagnostics Overlay
+      diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
     }
   });
 
