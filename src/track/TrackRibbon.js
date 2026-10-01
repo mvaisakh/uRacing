@@ -36,8 +36,8 @@ export class TrackRibbon {
     const n = this.samples.length;
     if (n < 2) return;
 
-    // 1. Draw Asphalt Road Surface
-    ctx.fillStyle = '#222731';
+    // 1. Draw Orange Plastic Road Surface
+    ctx.fillStyle = '#e67e22'; // Bright plastic orange
     ctx.beginPath();
     ctx.moveTo(this.outerBoundaries[0].x, this.outerBoundaries[0].y);
     for (let i = 1; i < n; i++) {
@@ -58,11 +58,12 @@ export class TrackRibbon {
     ctx.fill();
     ctx.restore();
 
-    // Fill back asphalt base inside ribbon segments
+    // Fill back base inside ribbon segments with a slightly darker orange for joints
     ctx.save();
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
-      ctx.fillStyle = '#272d38';
+      // Every few segments, draw a dark line to simulate plastic track connectors
+      ctx.fillStyle = i % 15 === 0 ? '#d35400' : '#e67e22';
       ctx.beginPath();
       ctx.moveTo(this.innerBoundaries[i].x, this.innerBoundaries[i].y);
       ctx.lineTo(this.outerBoundaries[i].x, this.outerBoundaries[i].y);
@@ -73,19 +74,18 @@ export class TrackRibbon {
     }
     ctx.restore();
 
-    // 2. Red & White Racing Curbs on outer & inner edges
+    // 2. Thick Red Plastic Edges
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
-      const isRed = Math.floor(i / 3) % 2 === 0;
-      ctx.fillStyle = isRed ? '#e74c3c' : '#ecf0f1';
+      ctx.fillStyle = '#c0392b'; // Solid red edge
 
-      // Outer curb
+      // Outer plastic edge
       const oEdge1 = this.outerBoundaries[i];
       const oEdge2 = this.outerBoundaries[next];
       const oNorm1 = this.samples[i].normal;
       const oNorm2 = this.samples[next].normal;
-      const oCurb1 = oEdge1.clone().add(oNorm1.clone().scale(6));
-      const oCurb2 = oEdge2.clone().add(oNorm2.clone().scale(6));
+      const oCurb1 = oEdge1.clone().add(oNorm1.clone().scale(12)); // Much thicker
+      const oCurb2 = oEdge2.clone().add(oNorm2.clone().scale(12));
 
       ctx.beginPath();
       ctx.moveTo(oEdge1.x, oEdge1.y);
@@ -95,11 +95,11 @@ export class TrackRibbon {
       ctx.closePath();
       ctx.fill();
 
-      // Inner curb
+      // Inner plastic edge
       const iEdge1 = this.innerBoundaries[i];
       const iEdge2 = this.innerBoundaries[next];
-      const iCurb1 = iEdge1.clone().sub(oNorm1.clone().scale(6));
-      const iCurb2 = iEdge2.clone().sub(oNorm2.clone().scale(6));
+      const iCurb1 = iEdge1.clone().sub(oNorm1.clone().scale(12));
+      const iCurb2 = iEdge2.clone().sub(oNorm2.clone().scale(12));
 
       ctx.beginPath();
       ctx.moveTo(iEdge1.x, iEdge1.y);
@@ -109,19 +109,6 @@ export class TrackRibbon {
       ctx.closePath();
       ctx.fill();
     }
-
-    // 3. Dashed White Center Line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([16, 16]);
-    ctx.beginPath();
-    ctx.moveTo(this.centerLine[0].x, this.centerLine[0].y);
-    for (let i = 1; i < n; i++) {
-      ctx.lineTo(this.centerLine[i].x, this.centerLine[i].y);
-    }
-    ctx.closePath();
-    ctx.stroke();
-    ctx.setLineDash([]); // Reset dash
 
     // 4. Start/Finish Chequered Line
     this._drawStartFinishLine(ctx);

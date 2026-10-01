@@ -6,7 +6,7 @@ export const TRACK_ROSTER = {
     id: 'kitchen_countertop',
     name: 'Kitchen Countertop Grand Prix',
     environment: 'kitchen',
-    bgColor: '#16191f',
+    bgColor: '#966F33', // Oak wood
     laps: 3,
     trackWidth: 140,
     startPosition: { x: 0, y: -450 },
@@ -29,7 +29,7 @@ export const TRACK_ROSTER = {
     id: 'workshop_bench',
     name: 'Workshop Workbench Derby',
     environment: 'workshop',
-    bgColor: '#1a1815',
+    bgColor: '#8B5A2B', // Darker wood
     laps: 3,
     trackWidth: 150,
     startPosition: { x: 0, y: -500 },
@@ -52,7 +52,7 @@ export const TRACK_ROSTER = {
     id: 'desk_rally',
     name: 'Office Desk Sprint',
     environment: 'office',
-    bgColor: '#131b1d',
+    bgColor: '#CDBA96', // Light desk wood
     laps: 3,
     trackWidth: 130,
     startPosition: { x: -300, y: -400 },

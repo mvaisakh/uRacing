@@ -323,26 +323,23 @@ function initGame() {
       ctx.translate(shake.x, shake.y);
       ctx.rotate(shake.angle);
 
-      // Draw Grid Mat
+      // Draw Wooden Floor Grid
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-      ctx.lineWidth = 1;
-      const gridSize = 120;
-      const startX = Math.floor((camera.position.x - canvas.width / camera.zoom) / gridSize) * gridSize;
-      const endX = Math.ceil((camera.position.x + canvas.width / camera.zoom) / gridSize) * gridSize;
-      const startY = Math.floor((camera.position.y - canvas.height / camera.zoom) / gridSize) * gridSize;
-      const endY = Math.ceil((camera.position.y + canvas.height / camera.zoom) / gridSize) * gridSize;
+      const gridSize = 160;
+      // In Camera3D, scale is fovScale.
+      const scale = camera.fovScale || 1.0;
+      const startX = Math.floor((camera.position.x - canvas.width / scale) / gridSize) * gridSize - gridSize * 2;
+      const endX = Math.ceil((camera.position.x + canvas.width / scale) / gridSize) * gridSize + gridSize * 2;
+      const startY = Math.floor((camera.position.y - canvas.height / scale) / gridSize) * gridSize - gridSize * 2;
+      const endY = Math.ceil((camera.position.y + canvas.height / scale) / gridSize) * gridSize + gridSize * 2;
 
-      ctx.beginPath();
       for (let x = startX; x <= endX; x += gridSize) {
-        ctx.moveTo(x, startY);
-        ctx.lineTo(x, endY);
+        for (let y = startY; y <= endY; y += gridSize) {
+          const isDark = (Math.abs(x / gridSize) + Math.abs(y / gridSize)) % 2 === 0;
+          ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.02)';
+          ctx.fillRect(x, y, gridSize, gridSize);
+        }
       }
-      for (let y = startY; y <= endY; y += gridSize) {
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
-      }
-      ctx.stroke();
       ctx.restore();
 
       // World Props, Track, Skidmarks
