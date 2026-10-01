@@ -329,7 +329,7 @@ function initGame() {
       
       // Update camera
       if (playerCar) {
-         threeRenderer.updateCamera(playerCar, loop.dt);
+         threeRenderer.updateCamera(playerCar, loop.step);
       }
       
       threeRenderer.render();
