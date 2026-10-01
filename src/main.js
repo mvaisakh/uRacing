@@ -27,6 +27,12 @@ import { RaceManager } from './core/RaceManager.js';
 import { GarageUI } from './ui/GarageUI.js';
 import { TrackSelectUI } from './ui/TrackSelectUI.js';
 import { ControlsOverlay } from './ui/ControlsOverlay.js';
+import { NitroSystem } from './vehicles/NitroSystem.js';
+import { CameraShake } from './render/CameraShake.js';
+import { NitroFlames } from './render/NitroFlames.js';
+import { AudioSFXManager } from './audio/AudioSFXManager.js';
+import { TouchControls } from './ui/TouchControls.js';
+import { PerformanceMonitor } from './core/PerformanceMonitor.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
@@ -46,28 +52,32 @@ window.addEventListener('DOMContentLoaded', () => {
   const gameState = new GameState(storage);
   const input = new InputHandler();
   const camera = new Camera2D(canvas.width, canvas.height);
+  const cameraShake = new CameraShake();
   const particles = new ParticleSystem();
   const sounds = new SoundSystem();
+  const sfx = new AudioSFXManager(sounds);
   const speedometer = new SpeedometerHUD(130);
+  const nitro = new NitroSystem();
+  const touchControls = new TouchControls(input);
+  const perfMon = new PerformanceMonitor();
 
-  // User gesture interaction unlocks Web Audio
   const unlockAudio = () => {
     sounds.init();
     sounds.resume();
     window.removeEventListener('keydown', unlockAudio);
     window.removeEventListener('click', unlockAudio);
+    window.removeEventListener('touchstart', unlockAudio);
   };
   window.addEventListener('keydown', unlockAudio);
   window.addEventListener('click', unlockAudio);
+  window.addEventListener('touchstart', unlockAudio);
 
   window.addEventListener('resize', () => {
     resizeCanvas();
     camera.resize(canvas.width, canvas.height);
   });
 
-  // Screen Modes: 'GARAGE', 'TRACK_SELECT', 'RACE'
   let currentScreen = 'GARAGE';
-
   let currentTrackKey = 'kitchen_countertop';
   let trackConfig = TRACK_ROSTER[currentTrackKey];
   let spline = new CatmullRomSpline(trackConfig.waypoints, true);
@@ -90,7 +100,9 @@ window.addEventListener('DOMContentLoaded', () => {
   const raceManager = new RaceManager({
     totalLaps: trackConfig.laps,
     onRaceFinish: (winner, coins) => {
-      // Awarded in RaceManager
+      if (winner === 'player') {
+        sfx.playWinChime();
+      }
     }
   });
 
@@ -113,7 +125,6 @@ window.addEventListener('DOMContentLoaded', () => {
     playerCar = new Car(playerSpec);
     playerTracker = checkpointSystem.createTracker();
 
-    // Pick a rival car
     const rivals = Object.keys(VEHICLE_ROSTER).filter(k => k !== gameState.profile.selectedCar);
     const rivalKey = rivals[Math.floor(Math.random() * rivals.length)] || 'tokyo_drift_king';
     const aiSpec = VEHICLE_ROSTER[rivalKey];
@@ -138,7 +149,6 @@ window.addEventListener('DOMContentLoaded', () => {
     currentScreen = 'RACE';
   }
 
-  // Navigation Menus
   const garageUI = new GarageUI(
     gameState,
     (car) => {},
@@ -153,7 +163,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   );
 
-  // Key navigation listener for Menus
   window.addEventListener('keydown', (e) => {
     if (currentScreen === 'GARAGE') {
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') garageUI.prevCar();
@@ -187,20 +196,24 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // --- RACING STATE ---
       const rawControls = input.getControls();
       if (rawControls.reset) {
         startRaceSession();
       }
 
-      // Lock controls if countdown
+      // Check nitro input
+      if (rawControls.nitro && raceManager.canDrive()) {
+        if (nitro.trigger()) {
+          sfx.playNitroWhoosh();
+          cameraShake.addTrauma(0.35);
+        }
+      }
+
       const playerControls = raceManager.canDrive() ? rawControls : { throttle: 0, brake: 0, steer: 0, handbrake: false };
 
-      // Update surface friction
       surfaceManager.evaluateSurface(playerCar);
       surfaceManager.evaluateSurface(aiCar);
 
-      // AI updates
       const aiDiff = rubberBanding.getDifficultyScalar(
         playerTracker.nextGateIndex * 15,
         aiTracker.nextGateIndex * 15,
@@ -209,28 +222,32 @@ window.addEventListener('DOMContentLoaded', () => {
       const aiControls = raceManager.canDrive() ? aiController.update(dt, aiDiff) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
 
       playerCar.update(playerControls, dt);
+      nitro.update(dt, playerCar);
       aiCar.update(aiControls, dt);
 
       // Collisions: Barriers
       for (const barrier of trackBarriers.getBarriers()) {
         if (CollisionSystem.resolveCarBarrier(playerCar, barrier)) {
           sounds.playImpactSound(playerCar.forwardVelocity);
+          cameraShake.addTrauma(0.25);
         }
         CollisionSystem.resolveCarBarrier(aiCar, barrier);
       }
 
-      // Collisions: Tabletop Props
+      // Collisions: Props
       if (propManager.resolveCollisions(playerCar)) {
         sounds.playImpactSound(playerCar.forwardVelocity);
+        cameraShake.addTrauma(0.3);
       }
       propManager.resolveCollisions(aiCar);
 
       // Collisions: Car vs Car
       if (CarVsCarCollision.resolve(playerCar, aiCar)) {
         sounds.playImpactSound(250);
+        cameraShake.addTrauma(0.2);
       }
 
-      // Update race & laps
+      // Race & Laps
       if (raceManager.state === 'RACING') {
         lapTimer.update(dt);
         checkpointSystem.updateTracker(playerTracker, playerCar.body.position, (laps) => {
@@ -244,14 +261,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
       raceManager.update(dt, playerTracker, aiTracker, gameState, trackConfig.id);
 
-      // Audio Synthesis
+      // Audio & Camera
       sounds.updateEngine(playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerControls.throttle);
       sounds.updateDriftScreech(playerCar.isDrifting, playerCar.lateralVelocity);
-
-      // Camera
       camera.follow(playerCar.body.position, playerCar.body.velocity, dt);
+      cameraShake.update(dt);
 
-      // Tire particle effects
+      // Particles
       const emitTireEffects = (car, prev) => {
         const heading = Vec2.fromAngle(car.body.angle);
         const right = new Vec2(-heading.y, heading.x);
@@ -284,11 +300,14 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Clear & Background
       ctx.fillStyle = trackConfig.bgColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Apply Camera Follow + Trauma Shake
       camera.begin(ctx);
+      const shake = cameraShake.getOffset();
+      ctx.translate(shake.x, shake.y);
+      ctx.rotate(shake.angle);
 
       // Draw Grid Mat
       ctx.save();
@@ -312,15 +331,16 @@ window.addEventListener('DOMContentLoaded', () => {
       ctx.stroke();
       ctx.restore();
 
-      // World Props below track or on infield
+      // World Props, Track, Skidmarks
       propManager.render(ctx);
-
-      // Track ribbon & Barriers
       trackRibbon.render(ctx);
       trackBarriers.render(ctx);
-
-      // Skidmarks & Particles
       particles.render(ctx);
+
+      // Exhaust nitro flames if active
+      if (nitro.isActive) {
+        NitroFlames.render(ctx, playerCar);
+      }
 
       // Vehicles
       VehicleRenderer.render(ctx, aiCar);
@@ -329,7 +349,6 @@ window.addEventListener('DOMContentLoaded', () => {
       camera.end(ctx);
 
       // --- Screen Space HUD ---
-      // Top Left Telemetry
       ctx.fillStyle = 'rgba(15, 20, 26, 0.85)';
       ctx.fillRect(16, 16, 280, 130);
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
@@ -351,14 +370,18 @@ window.addEventListener('DOMContentLoaded', () => {
       ctx.fillStyle = playerCar.surfaceGripMultiplier < 0.8 ? '#e74c3c' : '#4ae3b5';
       ctx.fillText(`SURFACE: ${playerCar.surfaceGripMultiplier < 0.8 ? 'OFF-TRACK (SLOW)' : 'ASPHALT (CLEAN)'}`, 28, 130);
 
-      // Speedometer Gauge bottom left
+      // Nitro HUD Meter
+      nitro.renderHUD(ctx, 310, 36);
+
+      // Speedometer Gauge
       speedometer.render(ctx, 20, canvas.height - 150, playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerCar.isDrifting);
 
-      // Minimap bottom right
+      // Minimap
       minimap.render(ctx, canvas.width - 190, canvas.height - 190, playerCar, [aiCar]);
 
-      // Overlay controls instructions
+      // Overlay controls & touch
       ControlsOverlay.render(ctx, canvas.width, canvas.height, currentScreen);
+      touchControls.render(ctx, canvas.width, canvas.height);
 
       // Race countdown / Finish overlay
       raceManager.renderOverlay(ctx, canvas.width, canvas.height);
@@ -366,5 +389,5 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   loop.start();
-  console.info('μRacing engine ready with complete screens, audio synth, and garage!');
+  console.info('μRacing engine ready with locked 60fps loop, SFX, Nitro, and Camera Trauma!');
 });
