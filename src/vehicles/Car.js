@@ -1,5 +1,5 @@
 import { Vec2 } from '../math/Vec2.js';
-import { RigidBody2D } from './RigidBody2D.js';
+import { RigidBody2D } from '../physics/RigidBody2D.js';
 
 /**
  * Car: Encapsulates vehicle kinematics, wheel traction vectors, and steering.
