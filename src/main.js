@@ -84,7 +84,8 @@ function initGame() {
 
   let currentScreen = 'GARAGE';
   let currentTrackKey = 'kitchen_countertop';
-  let trackConfig, spline, splineSamples, trackRibbon, trackBarriers;
+  let trackConfig = TRACK_ROSTER[currentTrackKey];
+  let spline, splineSamples, trackRibbon, trackBarriers;
   let surfaceManager, checkpointSystem, propManager, minimap;
   let lapTimer = new LapTimer();
   let rubberBanding = new RubberBanding();
