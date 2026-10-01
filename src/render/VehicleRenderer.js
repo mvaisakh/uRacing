@@ -1,10 +1,12 @@
 /**
- * VehicleRenderer: Procedural die-cast car renderer with ambient drop shadows,
- * metallic enamel reflection gradients, windshield glass, and micro wheels.
+ * VehicleRenderer: Procedural 2.5D pseudo-3D die-cast car renderer.
+ * Features stacked voxel/chassis extrusion layers, metallic specular enamel reflections,
+ * cast drop-shadows with ground clearance, 3D windshield glass with specular tint,
+ * realistic micro wheels with rim hubcaps, and directional headlights/taillights.
  */
 export class VehicleRenderer {
   /**
-   * Render a micro die-cast car onto the 2D canvas context.
+   * Render a miniature 3D die-cast car onto the canvas.
    */
   static render(ctx, car) {
     const { position, angle } = car.body;
@@ -16,93 +18,150 @@ export class VehicleRenderer {
     ctx.translate(position.x, position.y);
     ctx.rotate(angle);
 
-    // 1. Die-cast Miniature Drop Shadow (offset for pseudo-3D height feel)
+    // 1. Ambient Ground Contact Drop Shadow (Separated for clearance elevation)
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetX = 6;
-    ctx.shadowOffsetY = 6;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    this._drawRoundedRect(ctx, -hw - 1, -hl - 1, width + 2, length + 2, 4);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.filter = 'blur(4px)';
+    ctx.beginPath();
+    this._drawRoundedRect(ctx, -hw - 2 + 5, -hl - 2 + 7, width + 4, length + 4, 6);
     ctx.fill();
     ctx.restore();
 
-    // 2. Wheels / Micro Rubber Tires
-    ctx.fillStyle = '#111315';
-    const wheelW = 4;
-    const wheelL = 9;
-    // Front wheels (steer slightly with angular kick)
-    const steerAngle = (car.body.angularVelocity || 0) * 0.15;
+    // 2. Wheels / Micro Rubber Tires with 3D Depth
+    ctx.fillStyle = '#0f1114';
+    const wheelW = 4.5;
+    const wheelL = 10;
+    const steerAngle = (car.body.angularVelocity || 0) * 0.16;
 
-    // Front-Left
-    this._drawWheel(ctx, -hw - 1.5, hl * 0.45, wheelW, wheelL, steerAngle);
-    // Front-Right
-    this._drawWheel(ctx, hw - 2.5, hl * 0.45, wheelW, wheelL, steerAngle);
-    // Rear-Left
-    this._drawWheel(ctx, -hw - 1.5, -hl * 0.6, wheelW, wheelL, 0);
-    // Rear-Right
-    this._drawWheel(ctx, hw - 2.5, -hl * 0.6, wheelW, wheelL, 0);
+    // Front wheels (steerable)
+    this._drawWheel3D(ctx, -hw - 2, hl * 0.42, wheelW, wheelL, steerAngle);
+    this._drawWheel3D(ctx, hw - 2.5, hl * 0.42, wheelW, wheelL, steerAngle);
+    // Rear wheels (fixed)
+    this._drawWheel3D(ctx, -hw - 2, -hl * 0.62, wheelW, wheelL, 0);
+    this._drawWheel3D(ctx, hw - 2.5, -hl * 0.62, wheelW, wheelL, 0);
 
-    // 3. Painted Die-cast Body Shell
-    const bodyGrad = ctx.createLinearGradient(-hw, 0, hw, 0);
-    bodyGrad.addColorStop(0, this._adjustBrightness(spec.color, -25));
-    bodyGrad.addColorStop(0.35, spec.color);
-    bodyGrad.addColorStop(0.7, this._adjustBrightness(spec.color, 35)); // metallic enamel highlight
-    bodyGrad.addColorStop(1, this._adjustBrightness(spec.color, -20));
-
-    ctx.fillStyle = bodyGrad;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.lineWidth = 1.2;
-    this._drawRoundedRect(ctx, -hw, -hl, width, length, 4);
+    // 3. Lower Chassis Underbody (Dark shadow foundation)
+    ctx.fillStyle = '#1c2028';
+    this._drawRoundedRect(ctx, -hw + 1, -hl + 2, width - 2, length - 4, 3);
     ctx.fill();
-    ctx.stroke();
 
-    // 4. Racing Stripes or Aerodynamic Accent Line
-    if (spec.stripeColor) {
-      ctx.fillStyle = spec.stripeColor;
-      ctx.fillRect(-2, -hl + 2, 4, length - 4);
+    // 4. Pseudo-3D Body Shell Extrusion Layers (Stacking layers creates physical 3D die-cast thickness)
+    const extrusionSlices = 4;
+    for (let layer = 0; layer < extrusionSlices; layer++) {
+      const offset = -layer * 1.5; // elevate upward in pseudo-Z
+      const layerBrightness = -15 + layer * 10;
+      const layerColor = this._adjustBrightness(spec.color, layerBrightness);
+
+      ctx.save();
+      ctx.translate(0, offset);
+
+      // Body Gradient (Curved metallic surface lighting)
+      const grad = ctx.createLinearGradient(-hw, 0, hw, 0);
+      grad.addColorStop(0, this._adjustBrightness(layerColor, -25));
+      grad.addColorStop(0.25, layerColor);
+      grad.addColorStop(0.55, this._adjustBrightness(layerColor, 35)); // Enamel gloss streak
+      grad.addColorStop(0.85, layerColor);
+      grad.addColorStop(1, this._adjustBrightness(layerColor, -20));
+
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = layer === extrusionSlices - 1 ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.2)';
+      ctx.lineWidth = 1.0;
+      this._drawRoundedRect(ctx, -hw, -hl, width, length, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Topmost layer details (Hood scoops, stripes, cockpit, lights)
+      if (layer === extrusionSlices - 1) {
+        // Racing stripes
+        if (spec.stripeColor) {
+          ctx.fillStyle = spec.stripeColor;
+          ctx.fillRect(-2.5, -hl + 3, 5, length - 6);
+        }
+
+        // 5. 3D Elevated Cabin / Roof Greenhouse
+        const cabinW = width * 0.72;
+        const cabinL = length * 0.46;
+        const cabinY = -cabinL * 0.35;
+
+        // Cabin dark frame
+        ctx.fillStyle = '#14181f';
+        this._drawRoundedRect(ctx, -cabinW / 2, cabinY, cabinW, cabinL, 3);
+        ctx.fill();
+
+        // Front Windshield Glass
+        const glassGrad = ctx.createLinearGradient(0, cabinY + cabinL * 0.6, 0, cabinY);
+        glassGrad.addColorStop(0, '#34495e');
+        glassGrad.addColorStop(0.5, '#5dade2');
+        glassGrad.addColorStop(1, '#aed6f1');
+
+        ctx.fillStyle = glassGrad;
+        ctx.beginPath();
+        ctx.moveTo(-cabinW / 2 + 2, cabinY + cabinL * 0.65);
+        ctx.lineTo(cabinW / 2 - 2, cabinY + cabinL * 0.65);
+        ctx.lineTo(cabinW / 2 - 3, cabinY + cabinL * 0.95);
+        ctx.lineTo(-cabinW / 2 + 3, cabinY + cabinL * 0.95);
+        ctx.closePath();
+        ctx.fill();
+
+        // Windshield Specular Reflection Glare
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.beginPath();
+        ctx.moveTo(-cabinW / 2 + 3, cabinY + cabinL * 0.7);
+        ctx.lineTo(cabinW / 2 - 4, cabinY + cabinL * 0.7);
+        ctx.lineTo(cabinW / 2 - 7, cabinY + cabinL * 0.85);
+        ctx.lineTo(-cabinW / 2 + 5, cabinY + cabinL * 0.85);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rear Window Glass
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.moveTo(-cabinW / 2 + 2, cabinY + cabinL * 0.1);
+        ctx.lineTo(cabinW / 2 - 2, cabinY + cabinL * 0.1);
+        ctx.lineTo(cabinW / 2 - 4, cabinY + cabinL * 0.35);
+        ctx.lineTo(-cabinW / 2 + 4, cabinY + cabinL * 0.35);
+        ctx.closePath();
+        ctx.fill();
+
+        // Roof Panel
+        ctx.fillStyle = layerColor;
+        this._drawRoundedRect(ctx, -cabinW * 0.42, cabinY + cabinL * 0.35, cabinW * 0.84, cabinL * 0.32, 2);
+        ctx.fill();
+
+        // 6. Xenon Headlight lenses with glow halo
+        ctx.fillStyle = '#fffbc8';
+        ctx.fillRect(-hw + 2, hl - 2, 4, 2.5);
+        ctx.fillRect(hw - 6, hl - 2, 4, 2.5);
+
+        // 7. LED Taillights (Red / bright glow on brake or drift)
+        const isBraking = car.forwardVelocity < -1 || car.isDrifting;
+        ctx.fillStyle = isBraking ? '#ff3838' : '#c0392b';
+        ctx.fillRect(-hw + 2, -hl, 4, 2.5);
+        ctx.fillRect(hw - 6, -hl, 4, 2.5);
+      }
+
+      ctx.restore();
     }
-
-    // 5. Windshield and Cabin Cockpit
-    ctx.fillStyle = '#1a252f';
-    const cabinW = width * 0.68;
-    const cabinL = length * 0.45;
-    this._drawRoundedRect(ctx, -cabinW / 2, -cabinL * 0.4, cabinW, cabinL, 3);
-    ctx.fill();
-
-    // Windshield specular gloss reflection
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    ctx.beginPath();
-    ctx.moveTo(-cabinW / 2 + 2, -cabinL * 0.35);
-    ctx.lineTo(cabinW / 2 - 2, -cabinL * 0.35);
-    ctx.lineTo(cabinW / 2 - 4, -cabinL * 0.1);
-    ctx.lineTo(-cabinW / 2 + 4, -cabinL * 0.1);
-    ctx.closePath();
-    ctx.fill();
-
-    // 6. Headlights (Bright xenon micro dots)
-    ctx.fillStyle = '#fff9d2';
-    ctx.fillRect(-hw + 2, hl - 2, 3.5, 2);
-    ctx.fillRect(hw - 5.5, hl - 2, 3.5, 2);
-
-    // 7. Taillights (Red micro glow)
-    ctx.fillStyle = car.forwardVelocity < -1 ? '#ffffff' : (car.isDrifting ? '#ff3838' : '#c0392b');
-    ctx.fillRect(-hw + 2, -hl, 3.5, 2);
-    ctx.fillRect(hw - 5.5, -hl, 3.5, 2);
 
     ctx.restore();
   }
 
-  static _drawWheel(ctx, x, y, w, l, angle) {
+  static _drawWheel3D(ctx, x, y, w, l, angle) {
     ctx.save();
     ctx.translate(x + w / 2, y + l / 2);
     ctx.rotate(angle);
-    ctx.fillStyle = '#0a0a0c';
-    this._drawRoundedRect(ctx, -w / 2, -l / 2, w, l, 1.5);
+
+    // Tire tread
+    ctx.fillStyle = '#0d0e12';
+    this._drawRoundedRect(ctx, -w / 2, -l / 2, w, l, 2);
     ctx.fill();
-    // Silver wheel rim dot
+
+    // Alloy Hubcap Rim
     ctx.fillStyle = '#bdc3c7';
-    ctx.fillRect(-1, -1, 2, 2);
+    ctx.beginPath();
+    ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   }
 

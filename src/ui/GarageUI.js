@@ -79,31 +79,46 @@ export class GarageUI {
       ctx.stroke();
     }
 
-    // 2. Showcase Turntable Pedestal
+    // 2. Showcase Turntable Pedestal with 3D Depth
     const centerX = width / 2;
-    const centerY = height * 0.42;
+    const centerY = height * 0.40;
 
     ctx.save();
     ctx.translate(centerX, centerY);
 
-    // Pedestal shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    // Deep pedestal ground shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.beginPath();
-    ctx.ellipse(0, 50, 140, 45, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 65, 170, 50, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Turntable metal rim
-    ctx.fillStyle = '#1e2430';
-    ctx.strokeStyle = '#00cec9';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.ellipse(0, 20, 130, 40, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // 3D Beveled Turntable Base (Stacked cylinders)
+    const baseLayers = 14;
+    for (let i = 0; i < baseLayers; i++) {
+      const yOffset = 30 - i * 1.8;
+      const shade = 18 + i * 2;
+      ctx.fillStyle = `rgb(${shade}, ${shade + 4}, ${shade + 10})`;
+      ctx.beginPath();
+      ctx.ellipse(0, yOffset, 150 - i * 0.8, 44 - i * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Top Glowing Neon Platform Rim
+    ctx.strokeStyle = '#00f2fe';
+    ctx.lineWidth = 3.5;
     ctx.stroke();
 
-    // Preview car rendered with 2x zoom scale for crisp micro inspection
+    // Circular neon accent rings on turntable
+    ctx.strokeStyle = 'rgba(0, 242, 254, 0.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 100, 28, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Preview car rendered with 3D elevation and 2.5x zoom
     ctx.save();
-    ctx.scale(2.2, 2.2);
+    ctx.translate(0, -6);
+    ctx.scale(2.6, 2.6);
     VehicleRenderer.render(ctx, this.previewCar);
     ctx.restore();
 
