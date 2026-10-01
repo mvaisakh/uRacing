@@ -14,7 +14,7 @@ export class Camera3D {
     this.targetAngle = 0;
 
     // Camera chase distances
-    this.chaseDistance = 85;  // Closer to the vehicle
+    this.chaseDistance = 60;  // Closer to the vehicle
     this.elevation = 40;      // Height above the track surface
     this.pitch = 0.40;        // Lower perspective squashing pitch (less aerial)
     this.fovScale = 1.2;
@@ -44,8 +44,11 @@ export class Camera3D {
     this.position.y += (targetPos.y - this.position.y) * posT;
 
     // Dynamic FOV / distance based on vehicle forward velocity
+    // Zoomed in for a proper third-person view
     const speed = targetVelocity.length();
-    this.fovScale = Math.max(0.85, 1.05 - (speed / 800) * 0.25);
+    const targetFov = Math.max(2.8, 3.8 - (speed / 800) * 0.8);
+    // Smoothly interpolate fovScale
+    this.fovScale += (targetFov - this.fovScale) * 5.0 * dt;
   }
 
   /**
