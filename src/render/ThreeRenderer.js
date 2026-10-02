@@ -431,14 +431,16 @@ export class ThreeRenderer {
     if (!carGroup) return;
     
     const carPos = carGroup.position.clone();
-    let targetAngle = -car.body.angle;
+    // targetAngle must NOT be negated: cos(-θ)=cos(θ) so X is fine,
+    // but sin(-θ)=-sin(θ) flips Z which puts camera in front of the car!
+    let targetAngle = car.body.angle;
     
-    // Smooth angle interpolation — factor 0.8 means camera lazily chases the car's heading
-    // so sharp turns don't whip the view. Increase toward 5.0 for tighter follow.
+    // Lerp the camera's own angle to smoothly chase the car heading.
+    // Factor 3.0 * dt ≈ 0.05/frame — responsive without snapping.
     let diff = targetAngle - this.cameraAngle;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    this.cameraAngle += diff * (0.8 * dt);
+    this.cameraAngle += diff * (3.0 * dt);
     
     const dx = Math.cos(this.cameraAngle) * -chaseDist;
     const dz = Math.sin(this.cameraAngle) * -chaseDist;
