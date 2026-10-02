@@ -91,6 +91,62 @@ export class ThreeRenderer {
     this.trackCurve   = null;
     this.cameraLookAt = new THREE.Vector3();
     this.cameraAngle  = 0;
+
+    // 3D Tire Smoke Particles
+    this.smokePool = [];
+    this.maxSmoke = 120;
+    this.smokeGroup = new THREE.Group();
+    const smokeGeo = new THREE.DodecahedronGeometry(1.6, 0);
+    const smokeMat = new THREE.MeshLambertMaterial({
+      color: 0xd8dde4,
+      transparent: true,
+      opacity: 0.4
+    });
+    for (let i = 0; i < this.maxSmoke; i++) {
+      const sm = new THREE.Mesh(smokeGeo, smokeMat.clone());
+      sm.visible = false;
+      this.smokeGroup.add(sm);
+      this.smokePool.push({
+        mesh: sm,
+        life: 0,
+        maxLife: 1,
+        vel: new THREE.Vector3(),
+        rotSpeed: 0
+      });
+    }
+    this.scene.add(this.smokeGroup);
+
+    // 3D Tire Skidmarks (quad ribbons along track surface)
+    this.maxSkidSegments = 400;
+    this.skidIndex = 0;
+    this.skidPositions = new Float32Array(this.maxSkidSegments * 6 * 3);
+    this.skidAlphas = new Float32Array(this.maxSkidSegments * 6);
+    this.skidGeo = new THREE.BufferGeometry();
+    this.skidPosAttr = new THREE.BufferAttribute(this.skidPositions, 3);
+    this.skidAlphaAttr = new THREE.BufferAttribute(this.skidAlphas, 1);
+    this.skidGeo.setAttribute('position', this.skidPosAttr);
+    this.skidGeo.setAttribute('alpha', this.skidAlphaAttr);
+    this.skidMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      vertexShader: `
+        attribute float alpha;
+        varying float vAlpha;
+        void main() {
+          vAlpha = alpha;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        void main() {
+          gl_FragColor = vec4(0.12, 0.12, 0.15, vAlpha * 0.55);
+        }
+      `
+    });
+    this.skidMesh = new THREE.Mesh(this.skidGeo, this.skidMat);
+    this.scene.add(this.skidMesh);
+    this.lastWheels = new Map();
   }
 
   resize(w, h) {
@@ -99,8 +155,107 @@ export class ThreeRenderer {
     this.camera.updateProjectionMatrix();
   }
 
-  render() {
+  render(dt = 0.016) {
+    if (!this.garageMode) {
+      this._updateSmoke(dt);
+      this._fadeSkidmarks(dt);
+    }
     this.renderer.render(this.scene, this.camera);
+  }
+
+  _emitSmoke(x, y, z, baseVelX, baseVelZ) {
+    for (const p of this.smokePool) {
+      if (p.life <= 0) {
+        p.life = 0.45 + Math.random() * 0.3;
+        p.maxLife = p.life;
+        p.mesh.position.set(
+          x + (Math.random() - 0.5) * 2,
+          y + 0.8 + Math.random() * 1.2,
+          z + (Math.random() - 0.5) * 2
+        );
+        p.mesh.scale.setScalar(0.7 + Math.random() * 0.5);
+        p.mesh.visible = true;
+        p.vel.set(
+          baseVelX * 0.06 + (Math.random() - 0.5) * 12,
+          8 + Math.random() * 12,
+          baseVelZ * 0.06 + (Math.random() - 0.5) * 12
+        );
+        p.rotSpeed = (Math.random() - 0.5) * 4;
+        break;
+      }
+    }
+  }
+
+  _updateSmoke(dt) {
+    for (const p of this.smokePool) {
+      if (p.life > 0) {
+        p.life -= dt;
+        if (p.life <= 0) {
+          p.mesh.visible = false;
+        } else {
+          p.mesh.position.addScaledVector(p.vel, dt);
+          p.mesh.rotation.y += p.rotSpeed * dt;
+          const progress = 1 - (p.life / p.maxLife);
+          const s = 0.8 + progress * 2.2;
+          p.mesh.scale.set(s, s * 0.8, s);
+          p.mesh.material.opacity = (p.life / p.maxLife) * 0.4;
+        }
+      }
+    }
+  }
+
+  _addSkidQuad(p1, p2, width = 2.4, alpha = 0.75) {
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    if (dir.lengthSq() < 0.1) return;
+
+    const perp = new THREE.Vector3(-dir.z, 0, dir.x).normalize().multiplyScalar(width / 2);
+
+    const v0 = new THREE.Vector3().addVectors(p1, perp);
+    const v1 = new THREE.Vector3().subVectors(p1, perp);
+    const v2 = new THREE.Vector3().subVectors(p2, perp);
+    const v3 = new THREE.Vector3().addVectors(p2, perp);
+
+    const base = this.skidIndex * 18;
+    const aBase = this.skidIndex * 6;
+
+    const pos = this.skidPositions;
+    pos[base + 0] = v0.x; pos[base + 1] = v0.y; pos[base + 2] = v0.z;
+    pos[base + 3] = v1.x; pos[base + 4] = v1.y; pos[base + 5] = v1.z;
+    pos[base + 6] = v2.x; pos[base + 7] = v2.y; pos[base + 8] = v2.z;
+
+    pos[base + 9]  = v0.x; pos[base + 10] = v0.y; pos[base + 11] = v0.z;
+    pos[base + 12] = v2.x; pos[base + 13] = v2.y; pos[base + 14] = v2.z;
+    pos[base + 15] = v3.x; pos[base + 16] = v3.y; pos[base + 17] = v3.z;
+
+    const al = this.skidAlphas;
+    for (let k = 0; k < 6; k++) {
+      al[aBase + k] = alpha;
+    }
+
+    this.skidPosAttr.needsUpdate = true;
+    this.skidAlphaAttr.needsUpdate = true;
+    this.skidIndex = (this.skidIndex + 1) % this.maxSkidSegments;
+  }
+
+  _fadeSkidmarks(dt) {
+    let updated = false;
+    for (let i = 0; i < this.skidAlphas.length; i++) {
+      if (this.skidAlphas[i] > 0) {
+        this.skidAlphas[i] = Math.max(0, this.skidAlphas[i] - 0.02 * dt * 60);
+        updated = true;
+      }
+    }
+    if (updated) this.skidAlphaAttr.needsUpdate = true;
+  }
+
+  clearParticles() {
+    for (const p of this.smokePool) {
+      p.life = 0;
+      p.mesh.visible = false;
+    }
+    this.skidAlphas.fill(0);
+    this.skidAlphaAttr.needsUpdate = true;
+    this.lastWheels.clear();
   }
 
 
@@ -1022,6 +1177,41 @@ export class ThreeRenderer {
     
     group.position.set(car.body.position.x, newY, car.body.position.y);
     group.rotation.y = -car.body.angle; 
+
+    // 3D Smoke and Skidmarks for tire drift & slip
+    if (!this.garageMode) {
+      const angle = car.body.angle;
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      const backX = -cosA * 10;
+      const backZ = -sinA * 10;
+      const latX = -sinA * 6.5;
+      const latZ = cosA * 6.5;
+
+      const wlPos = new THREE.Vector3(
+        car.body.position.x + backX - latX,
+        newY + 0.12,
+        car.body.position.y + backZ - latZ
+      );
+      const wrPos = new THREE.Vector3(
+        car.body.position.x + backX + latX,
+        newY + 0.12,
+        car.body.position.y + backZ + latZ
+      );
+
+      const isSlipping = car.isDrifting || Math.abs(car.lateralVelocity || 0) > 65;
+      if (isSlipping) {
+        this._emitSmoke(wlPos.x, wlPos.y, wlPos.z, car.body.velocity.x, car.body.velocity.y);
+        this._emitSmoke(wrPos.x, wrPos.y, wrPos.z, car.body.velocity.x, car.body.velocity.y);
+
+        const last = this.lastWheels.get(id);
+        if (last) {
+          this._addSkidQuad(last.wl, wlPos, 2.2, 0.75);
+          this._addSkidQuad(last.wr, wrPos, 2.2, 0.75);
+        }
+      }
+      this.lastWheels.set(id, { wl: wlPos, wr: wrPos });
+    }
   }
 
   setGarageMode(active, previewCar) {

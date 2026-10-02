@@ -118,6 +118,7 @@ function initGame() {
     minimap = new Minimap(splineSamples, 170);
     if (raceManager) raceManager.totalLaps = trackConfig.laps;
     threeRenderer.buildEnvironment(trackConfig, splineSamples, trackBarriers, propManager);
+    threeRenderer.clearParticles();
   }
   setupTrack(currentTrackKey);
 
@@ -332,7 +333,7 @@ function initGame() {
          threeRenderer.updateCamera(playerCar, loop.step);
       }
       
-      threeRenderer.render();
+      threeRenderer.render(loop.step);
       
       // 2D particles removed as they don't align with 3D perspective camera
 
