@@ -304,6 +304,127 @@ export class ThreeRenderer {
     return group;
   }
 
+  _buildTrackRibbon(splineSamples, trackWidth, elevFn) {
+    const N = splineSamples.length;
+    const halfW = trackWidth / 2;
+    const thickness = 4;
+    const edgeW = 8;
+    const edgeH = 10;
+
+    const trackPositions = [];
+    const trackUvs = [];
+    const trackIndices = [];
+
+    const leftPositions = [];
+    const leftIndices = [];
+    const rightPositions = [];
+    const rightIndices = [];
+
+    for (let i = 0; i < N; i++) {
+      const s = splineSamples[i];
+      const p = i / N;
+      const y = elevFn(p);
+      const nx = s.normal.x;
+      const nz = s.normal.y;
+
+      const tlX = s.point.x - nx * halfW;
+      const tlZ = s.point.y - nz * halfW;
+      const trX = s.point.x + nx * halfW;
+      const trZ = s.point.y + nz * halfW;
+
+      trackPositions.push(
+        tlX, y, tlZ,
+        trX, y, trZ,
+        tlX, y - thickness, tlZ,
+        trX, y - thickness, trZ
+      );
+      trackUvs.push(0, p, 1, p, 0, p, 1, p);
+
+      const outLeftX = s.point.x - nx * (halfW + edgeW);
+      const outLeftZ = s.point.y - nz * (halfW + edgeW);
+      leftPositions.push(
+        tlX, y, tlZ,
+        tlX, y + edgeH, tlZ,
+        outLeftX, y + edgeH, outLeftZ,
+        outLeftX, y, outLeftZ
+      );
+
+      const outRightX = s.point.x + nx * (halfW + edgeW);
+      const outRightZ = s.point.y + nz * (halfW + edgeW);
+      rightPositions.push(
+        trX, y, trZ,
+        trX, y + edgeH, trZ,
+        outRightX, y + edgeH, outRightZ,
+        outRightX, y, outRightZ
+      );
+
+      const next = (i + 1) % N;
+      const curV = i * 4;
+      const nextV = next * 4;
+
+      trackIndices.push(
+        curV, curV + 1, nextV + 1,
+        curV, nextV + 1, nextV
+      );
+      trackIndices.push(
+        curV + 2, nextV + 3, curV + 3,
+        curV + 2, nextV + 2, nextV + 3
+      );
+      trackIndices.push(
+        curV, nextV, nextV + 2,
+        curV, nextV + 2, curV + 2
+      );
+      trackIndices.push(
+        curV + 1, curV + 3, nextV + 3,
+        curV + 1, nextV + 3, nextV + 1
+      );
+
+      leftIndices.push(
+        curV, nextV + 1, curV + 1,
+        curV, nextV, nextV + 1
+      );
+      leftIndices.push(
+        curV + 1, nextV + 2, curV + 2,
+        curV + 1, nextV + 1, nextV + 2
+      );
+      leftIndices.push(
+        curV + 2, nextV + 3, curV + 3,
+        curV + 2, nextV + 2, nextV + 3
+      );
+
+      rightIndices.push(
+        curV, curV + 1, nextV + 1,
+        curV, nextV + 1, nextV
+      );
+      rightIndices.push(
+        curV + 1, curV + 2, nextV + 2,
+        curV + 1, nextV + 2, nextV + 1
+      );
+      rightIndices.push(
+        curV + 2, curV + 3, nextV + 3,
+        curV + 2, nextV + 3, nextV + 2
+      );
+    }
+
+    const trackGeom = new THREE.BufferGeometry();
+    trackGeom.setAttribute('position', new THREE.Float32BufferAttribute(trackPositions, 3));
+    trackGeom.setAttribute('uv', new THREE.Float32BufferAttribute(trackUvs, 2));
+    trackGeom.setIndex(trackIndices);
+    trackGeom.computeVertexNormals();
+
+    const leftGeom = new THREE.BufferGeometry();
+    leftGeom.setAttribute('position', new THREE.Float32BufferAttribute(leftPositions, 3));
+    leftGeom.setIndex(leftIndices);
+    leftGeom.computeVertexNormals();
+
+    const rightGeom = new THREE.BufferGeometry();
+    rightGeom.setAttribute('position', new THREE.Float32BufferAttribute(rightPositions, 3));
+    rightGeom.setIndex(rightIndices);
+    rightGeom.computeVertexNormals();
+
+    return { trackGeom, leftGeom, rightGeom };
+  }
+
   buildEnvironment(trackConfig, splineSamples, trackBarriers, propManager) {
     this.trackMeshes.forEach(m => this.scene.remove(m));
     this.trackMeshes = [];
@@ -336,50 +457,23 @@ export class ThreeRenderer {
         return trackBaseY;
     };
 
-    const pts = splineSamples.map((s, idx) => {
-        const progress = idx / totalLen;
-        return new THREE.Vector3(s.point.x, elevFn(progress), s.point.y);
-    });
-    
-    const curve = new THREE.CatmullRomCurve3(pts, true);
-    this.trackCurve = curve;
-    
     const trackWidth = trackConfig.trackWidth || 140;
-    
-    // ExtrudeGeometry maps Shape X to World UP (Y), and Shape Y to World SIDE.
-    const thickness = 4;
-    const shape = new THREE.Shape();
-    shape.moveTo(0, -trackWidth/2);
-    shape.lineTo(0, trackWidth/2);
-    shape.lineTo(-thickness, trackWidth/2);
-    shape.lineTo(-thickness, -trackWidth/2);
-    
-    const extrudeSettings = { steps: 150, extrudePath: curve, bevelEnabled: false };
-    const trackGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    const trackMat = new THREE.MeshLambertMaterial({ color: 0xff6600 });
+    const { trackGeom, leftGeom, rightGeom } = this._buildTrackRibbon(splineSamples, trackWidth, elevFn);
+
+    const trackMat = new THREE.MeshLambertMaterial({ color: 0xff6600, side: THREE.DoubleSide });
     const trackMesh = new THREE.Mesh(trackGeom, trackMat);
+    trackMesh.receiveShadow = true;
     this.trackSurface = trackMesh; // dedicated ref used by raycast in updateCar
     this.scene.add(trackMesh);
     this.trackMeshes.push(trackMesh);
 
-    const edgeShapeLeft = new THREE.Shape();
-    edgeShapeLeft.moveTo(12, -trackWidth/2 - 10);
-    edgeShapeLeft.lineTo(0, -trackWidth/2 - 10);
-    edgeShapeLeft.lineTo(0, -trackWidth/2);
-    edgeShapeLeft.lineTo(12, -trackWidth/2);
-
-    const edgeShapeRight = new THREE.Shape();
-    edgeShapeRight.moveTo(12, trackWidth/2);
-    edgeShapeRight.lineTo(0, trackWidth/2);
-    edgeShapeRight.lineTo(0, trackWidth/2 + 10);
-    edgeShapeRight.lineTo(12, trackWidth/2 + 10);
-
-    const leftGeom = new THREE.ExtrudeGeometry(edgeShapeLeft, extrudeSettings);
-    const rightGeom = new THREE.ExtrudeGeometry(edgeShapeRight, extrudeSettings);
-    
-    const edgeMat = new THREE.MeshLambertMaterial({ color: 0xcc0000 });
+    const edgeMat = new THREE.MeshLambertMaterial({ color: 0xcc0000, side: THREE.DoubleSide });
     const leftMesh = new THREE.Mesh(leftGeom, edgeMat);
     const rightMesh = new THREE.Mesh(rightGeom, edgeMat);
+    leftMesh.castShadow = true;
+    leftMesh.receiveShadow = true;
+    rightMesh.castShadow = true;
+    rightMesh.receiveShadow = true;
     this.scene.add(leftMesh);
     this.scene.add(rightMesh);
     this.trackMeshes.push(leftMesh, rightMesh);
