@@ -162,16 +162,17 @@ export class ThreeRenderer {
         roughness: 0.2
     });
     
-    // Procedural Low Poly Chassis
+    // Procedural Low Poly Chassis — dimensions driven by vehicle stats
     const stats = car.spec.stats;
-    const speed = stats ? stats.speed : 50;
-    const weight = stats ? stats.weight : 50;
-    const drift = stats ? stats.drift : 50;
+    // topSpeed: 380–520, weight: 0.95–1.8 physics scale, driftFactor: 0.90–0.96
+    const speedNorm = stats ? Math.min((stats.topSpeed - 380) / 140, 1) : 0.5;  // 0–1
+    const weightNorm = stats ? Math.min((stats.weight - 0.9) / 0.9, 1) : 0.5;  // 0–1
+    const driftNorm = stats ? 1 - Math.min((stats.driftFactor - 0.88) / 0.08, 1) : 0.5; // 0–1, higher = more drift
 
     // Fast cars are longer and lower. Heavy cars are wider and taller.
-    const width = 12 + (weight / 100) * 12; // 12 to 24
-    const length = 22 + (speed / 100) * 22; // 22 to 44
-    const height = 6 + (weight / 100) * 8; // 6 to 14
+    const width = 14 + weightNorm * 10; // 14 to 24
+    const length = 28 + speedNorm * 16; // 28 to 44
+    const height = 7 + weightNorm * 7;  // 7 to 14
     
     const chassisGeo = new THREE.BoxGeometry(length, height, width);
     const chassis = new THREE.Mesh(chassisGeo, toyMaterialBody);
@@ -185,8 +186,8 @@ export class ThreeRenderer {
     const cabin = new THREE.Mesh(cabinGeo, toyGlass);
     cabin.position.y = height + 4;
     
-    // Position cabin based on engine type (drift cars might have longer front hoods)
-    cabin.position.x = -(length * 0.15) + (drift / 100) * (length * 0.2);
+    // Position cabin based on engine layout (drift cars have longer front hoods)
+    cabin.position.x = -(length * 0.1) + (driftNorm * length * 0.15);
     
     // Procedural Wheels
     const wheelGeo = new THREE.CylinderGeometry(4, 4, width + 2, 8);
