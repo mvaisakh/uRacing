@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { CAR_MODELS_DATA } from '../vehicles/CarModelsData.js';
+import { PropTextureGenerator } from './PropTextureGenerator.js';
 
 export class ThreeRenderer {
   constructor(canvasWidth, canvasHeight) {
+    this.propTexGen = new PropTextureGenerator();
     this.textureLoader = new THREE.TextureLoader();
     this.loadedTextures = new Map();
     this.modelGeometries = new Map();
@@ -389,6 +391,117 @@ export class ThreeRenderer {
             this.scene.add(propMeshGroup);
             this.trackMeshes.push(propMeshGroup);
         }
+    }
+
+    // Procedural Road-Rash style dense roadside item scattering (pencils, erasers, sharpeners, paints, utensils, vegetables)
+    this._scatterProceduralFlatProps(splineSamples, trackWidth, trackConfig.environment || 'kitchen');
+  }
+
+  _scatterProceduralFlatProps(splineSamples, trackWidth, env) {
+    if (!splineSamples || splineSamples.length === 0) return;
+
+    // Pick prop families based on environment
+    let propPool = [];
+    if (env === 'kitchen') {
+      propPool = [
+        { type: 'utensil', variants: [0, 1, 2], w: 32, h: 32 },
+        { type: 'vegetable', variants: [0, 1, 2], w: 30, h: 30 },
+        { type: 'pencil', variants: [0, 1], w: 28, h: 28 }
+      ];
+    } else if (env === 'workshop') {
+      propPool = [
+        { type: 'paint', variants: [0, 1, 2], w: 30, h: 30 },
+        { type: 'pencil', variants: [0, 1, 2], w: 28, h: 28 },
+        { type: 'eraser', variants: [0, 1], w: 26, h: 26 }
+      ];
+    } else if (env === 'playroom') {
+      propPool = [
+        { type: 'pencil', variants: [0, 1, 2], w: 30, h: 30 },
+        { type: 'sharpener', variants: [0, 1, 2], w: 26, h: 26 },
+        { type: 'eraser', variants: [0, 1, 2], w: 26, h: 26 }
+      ];
+    } else if (env === 'office') {
+      propPool = [
+        { type: 'pencil', variants: [0, 1, 2], w: 30, h: 30 },
+        { type: 'eraser', variants: [0, 1, 2], w: 26, h: 26 },
+        { type: 'sharpener', variants: [0, 1, 2], w: 26, h: 26 }
+      ];
+    } else { // garden
+      propPool = [
+        { type: 'vegetable', variants: [0, 1, 2], w: 32, h: 32 },
+        { type: 'utensil', variants: [0, 1], w: 28, h: 28 },
+        { type: 'pencil', variants: [0, 2], w: 28, h: 28 }
+      ];
+    }
+
+    // Deterministic pseudo-random number generator from index
+    const pseudoRand = (seed) => {
+      const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    };
+
+    const halfTrack = trackWidth / 2;
+    const numSamples = splineSamples.length;
+    // Step along the spline track in increments of ~4-5 samples
+    const step = 4;
+
+    for (let i = 0; i < numSamples; i += step) {
+      const s = splineSamples[i];
+      const p = s.point;
+      const n = s.normal; // perpendicular 2D vector
+
+      // Scatter on left and right borders of track
+      [-1, 1].forEach((side) => {
+        const seed = i * 7 + (side > 0 ? 1000 : 2000);
+        // Random probability to spawn: ~65% chance per node for dense Road-Rash feel
+        if (pseudoRand(seed) > 0.65) return;
+
+        // Mathematical offset from track border: between +25 and +110 units outward
+        const distOutward = halfTrack + 25 + pseudoRand(seed + 1) * 90;
+        const posX = p.x + n.x * side * distOutward;
+        const posZ = p.y + n.y * side * distOutward;
+
+        // Tangent jitter so items aren't in a rigid straight line
+        const jitterTan = (pseudoRand(seed + 2) - 0.5) * 35;
+        const finalX = posX + s.tangent.x * jitterTan;
+        const finalZ = posZ + s.tangent.y * jitterTan;
+
+        // Raycast elevation from track surface / ground
+        let elev = 0;
+        const raycaster = new THREE.Raycaster(
+          new THREE.Vector3(finalX, 300, finalZ),
+          new THREE.Vector3(0, -1, 0)
+        );
+        if (this.trackSurface) {
+          const hits = raycaster.intersectObject(this.trackSurface);
+          if (hits.length > 0) elev = hits[0].point.y;
+          else if (this.groundMesh) {
+            const gHits = raycaster.intersectObject(this.groundMesh);
+            if (gHits.length > 0) elev = gHits[0].point.y;
+          }
+        }
+
+        // Pick prop definition & variant
+        const propChoice = propPool[Math.floor(pseudoRand(seed + 3) * propPool.length)];
+        const variant = propChoice.variants[Math.floor(pseudoRand(seed + 4) * propChoice.variants.length)];
+        const texture = this.propTexGen.getTexture(propChoice.type, variant);
+
+        const spriteMat = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          alphaTest: 0.1
+        });
+        const sprite = new THREE.Sprite(spriteMat);
+        
+        const scale = 0.85 + pseudoRand(seed + 5) * 0.35;
+        const w = propChoice.w * scale;
+        const h = propChoice.h * scale;
+        sprite.scale.set(w, h, 1);
+        sprite.position.set(finalX, elev + h / 2, finalZ);
+
+        this.scene.add(sprite);
+        this.trackMeshes.push(sprite);
+      });
     }
   }
 
