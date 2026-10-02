@@ -1150,33 +1150,73 @@ export class ThreeRenderer {
     
     const group = meshObj.group;
     
-    // Raycast downward to find the track surface (or ground as fallback).
-    let surfaceY = 3; // default: track base height
-    const origin = new THREE.Vector3(car.body.position.x, 500, car.body.position.y);
-    const down   = new THREE.Vector3(0, -1, 0);
-    const raycaster = new THREE.Raycaster(origin, down);
-    
-    if (this.trackSurface) {
-        const hits = raycaster.intersectObject(this.trackSurface);
+    // 1. Raycast probing to find track surface elevation & tilt under front/rear wheels
+    const angle = car.body.angle;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const fwdX = cosA;
+    const fwdZ = sinA;
+
+    const probeDown = (px, pz) => {
+      const ray = new THREE.Raycaster(new THREE.Vector3(px, 500, pz), new THREE.Vector3(0, -1, 0));
+      if (this.trackSurface) {
+        const hits = ray.intersectObject(this.trackSurface);
         if (hits.length > 0) {
-            surfaceY = hits[0].point.y;
-        } else if (this.groundMesh) {
-            const gHits = raycaster.intersectObject(this.groundMesh);
-            if (gHits.length > 0) surfaceY = gHits[0].point.y;
+          const norm = hits[0].face ? hits[0].face.normal.clone() : new THREE.Vector3(0, 1, 0);
+          return { y: hits[0].point.y, normal: norm };
         }
-    }
-    
+      }
+      if (this.groundMesh) {
+        const gHits = ray.intersectObject(this.groundMesh);
+        if (gHits.length > 0) return { y: gHits[0].point.y, normal: new THREE.Vector3(0, 1, 0) };
+      }
+      return { y: 3, normal: new THREE.Vector3(0, 1, 0) };
+    };
+
+    const posX = car.body.position.x;
+    const posZ = car.body.position.y;
+
+    const centerProbe = probeDown(posX, posZ);
+    let surfaceY = centerProbe.y;
+
+    // Probe front and rear to compute pitch slope along vehicle wheelbase
+    const halfL = Math.min(14, (car.length || 34) * 0.35);
+    const frontProbe = probeDown(posX + fwdX * halfL, posZ + fwdZ * halfL);
+    const rearProbe  = probeDown(posX - fwdX * halfL, posZ - fwdZ * halfL);
+
     // Gravity: accelerate downward while airborne, clamp to surface on landing.
     const GRAVITY = 500; // units/s² — tuned for toy-car scale
     meshObj.velY -= GRAVITY * dt;
     let newY = group.position.y + meshObj.velY * dt;
-    if (newY <= surfaceY) {
+    const isGrounded = newY <= surfaceY;
+    if (isGrounded) {
         newY = surfaceY;
         meshObj.velY = 0; // zero velocity on landing (no bounce)
     }
     
-    group.position.set(car.body.position.x, newY, car.body.position.y);
-    group.rotation.y = -car.body.angle; 
+    group.position.set(posX, newY, posZ);
+
+    // 2. Full 3D Track Slope & Camber Alignment (Pitch & Roll)
+    // Vehicle Forward Vector along track surface
+    const slopeDy = (frontProbe.y - rearProbe.y) / (halfL * 2);
+    const F = new THREE.Vector3(fwdX, slopeDy, fwdZ).normalize();
+    
+    // Average normal from center/front/rear
+    let U = centerProbe.normal.clone().add(frontProbe.normal).add(rearProbe.normal).normalize();
+    if (U.y < 0.2) U.set(0, 1, 0); // fallback protection
+
+    // Orthonormal basis: F (forward), U (up), R (right)
+    const R = new THREE.Vector3().crossVectors(F, U).normalize();
+    U.crossVectors(R, F).normalize();
+
+    const rotMat = new THREE.Matrix4().makeBasis(F, U, R);
+    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMat);
+
+    if (isGrounded) {
+      group.quaternion.slerp(targetQuat, Math.min(1, 16 * dt));
+    } else {
+      group.quaternion.slerp(targetQuat, Math.min(1, 6 * dt));
+    }
 
     // 3D Smoke and Skidmarks for tire drift & slip
     if (!this.garageMode) {
@@ -1256,7 +1296,7 @@ export class ThreeRenderer {
         // Put car on rotating pedestal
         const rotY = -(previewCar.body.angle || 0);
         pMesh.group.position.set(0, 0, 0);
-        pMesh.group.rotation.y = rotY;
+        pMesh.group.rotation.set(0, rotY, 0);
         this.garagePedestal.rotation.y = rotY;
         this.garagePedestal.visible = true;
         
