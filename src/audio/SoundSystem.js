@@ -1,6 +1,7 @@
 /**
- * SoundSystem: Procedural Web Audio API sound synthesizer.
- * Generates dynamic engine RPM frequencies, tire drift squeals, and metallic collision thuds.
+ * SoundSystem: Procedural Web Audio API sound synthesizer and background music manager.
+ * Generates dynamic engine RPM frequencies, tire drift squeals, metallic collision thuds,
+ * and plays normalized looping menu music with smooth crossfades between screens.
  */
 export class SoundSystem {
   constructor() {
@@ -14,6 +15,12 @@ export class SoundSystem {
     // Tire drift squeal nodes
     this.driftOsc = null;
     this.driftGain = null;
+
+    // Menu background music
+    this.bgmAudio = null;
+    this.bgmTargetVolume = 0.28; // Normalized comfortable volume (doesn't blast on load)
+    this.bgmFadeInterval = null;
+    this.isBgmPlaying = false;
 
     this.initialized = false;
   }
@@ -30,7 +37,7 @@ export class SoundSystem {
     this.engineGain = this.ctx.createGain();
     this.engineOsc.type = 'sawtooth';
     this.engineOsc.frequency.setValueAtTime(65, this.ctx.currentTime);
-    this.engineGain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+    this.engineGain.gain.setValueAtTime(0.0, this.ctx.currentTime); // default silent until race starts
 
     // Lowpass filter for deep die-cast engine rumble
     const filter = this.ctx.createBiquadFilter();
@@ -53,7 +60,28 @@ export class SoundSystem {
     this.driftGain.connect(this.ctx.destination);
     this.driftOsc.start();
 
+    // 3. Setup HTML5 Audio element for Menu Background Music
+    this._initBgm();
+
     this.initialized = true;
+  }
+
+  _initBgm() {
+    if (this.bgmAudio) return;
+
+    this.bgmAudio = new Audio();
+    this.bgmAudio.src = 'public/audio/menu_theme.mp3';
+    this.bgmAudio.loop = true;
+    this.bgmAudio.volume = 0; // Starts at 0 for smooth fade-in
+    this.bgmAudio.preload = 'auto';
+
+    // Fallback if browser blocks relative public/ path
+    this.bgmAudio.onerror = () => {
+      if (this.bgmAudio.src.indexOf('Quarter_for_the_Win.mp3') === -1) {
+        this.bgmAudio.src = 'Quarter_for_the_Win.mp3';
+        this.bgmAudio.load();
+      }
+    };
   }
 
   resume() {
@@ -62,10 +90,72 @@ export class SoundSystem {
     }
   }
 
+  /**
+   * Starts looping menu theme with gentle fade-in at normalized volume (0.28).
+   */
+  startMenuMusic() {
+    if (!this.bgmAudio) this._initBgm();
+    if (this.isMuted) return;
+
+    this.isBgmPlaying = true;
+    if (this.bgmFadeInterval) clearInterval(this.bgmFadeInterval);
+
+    // Mute engine idle in menu
+    if (this.engineGain && this.ctx) {
+      this.engineGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.05);
+    }
+
+    const playPromise = this.bgmAudio.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        // Fade in smoothly to avoid any volume jump
+        let curVol = this.bgmAudio.volume;
+        this.bgmFadeInterval = setInterval(() => {
+          if (!this.isBgmPlaying) {
+            clearInterval(this.bgmFadeInterval);
+            return;
+          }
+          curVol = Math.min(this.bgmTargetVolume, curVol + 0.03);
+          this.bgmAudio.volume = curVol;
+          if (curVol >= this.bgmTargetVolume) {
+            clearInterval(this.bgmFadeInterval);
+          }
+        }, 50);
+      }).catch(err => {
+        console.warn('BGM autoplay waiting for user interaction:', err);
+      });
+    }
+  }
+
+  /**
+   * Gently fades out menu music when transitioning into active race.
+   */
+  stopMenuMusic() {
+    this.isBgmPlaying = false;
+    if (!this.bgmAudio) return;
+
+    if (this.bgmFadeInterval) clearInterval(this.bgmFadeInterval);
+
+    let curVol = this.bgmAudio.volume;
+    this.bgmFadeInterval = setInterval(() => {
+      curVol = Math.max(0, curVol - 0.04);
+      this.bgmAudio.volume = curVol;
+      if (curVol <= 0) {
+        clearInterval(this.bgmFadeInterval);
+        this.bgmAudio.pause();
+        this.bgmAudio.currentTime = 0;
+      }
+    }, 40);
+  }
+
   setVolume(volume) {
     if (this.isMuted) return;
     if (this.engineGain && this.ctx) {
       this.engineGain.gain.setTargetAtTime(0.04 * volume, this.ctx.currentTime, 0.05);
+    }
+    if (this.bgmAudio && this.isBgmPlaying) {
+      this.bgmTargetVolume = 0.28 * volume;
+      this.bgmAudio.volume = this.bgmTargetVolume;
     }
   }
 
@@ -76,6 +166,10 @@ export class SoundSystem {
     const throttleBoost = throttle > 0 ? 35 : 0;
     const targetFreq = 50 + ratio * 180 + throttleBoost;
     this.engineOsc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.08);
+
+    // Restore engine gain in race
+    const targetGain = 0.04 + ratio * 0.03;
+    this.engineGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.05);
   }
 
   updateDriftScreech(isDrifting, lateralSpeed) {

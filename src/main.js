@@ -68,6 +68,9 @@ function initGame() {
   const unlockAudio = () => {
     sounds.init();
     sounds.resume();
+    if (currentScreen === 'GARAGE' || currentScreen === 'TRACK_SELECT') {
+      sounds.startMenuMusic();
+    }
     window.removeEventListener('keydown', unlockAudio);
     window.removeEventListener('click', unlockAudio);
     window.removeEventListener('touchstart', unlockAudio);
@@ -83,6 +86,19 @@ function initGame() {
   });
 
   let currentScreen = 'GARAGE';
+
+  function setScreen(newScreen) {
+    const prev = currentScreen;
+    currentScreen = newScreen;
+
+    if (newScreen === 'GARAGE' || newScreen === 'TRACK_SELECT') {
+      if (!sounds.isBgmPlaying) {
+        sounds.startMenuMusic();
+      }
+    } else if (newScreen === 'RACE') {
+      sounds.stopMenuMusic();
+    }
+  }
   let currentTrackKey = 'kitchen_countertop';
   let trackConfig = TRACK_ROSTER[currentTrackKey];
   let spline, splineSamples, trackRibbon, trackBarriers;
@@ -148,13 +164,13 @@ function initGame() {
     lapTimer.start();
     raceManager.startRace();
     particles.clear();
-    currentScreen = 'RACE';
+    setScreen('RACE');
   }
 
   const garageUI = new GarageUI(
     gameState,
     (car) => {},
-    () => { currentScreen = 'TRACK_SELECT'; }
+    () => { setScreen('TRACK_SELECT'); }
   );
 
   const trackSelectUI = new TrackSelectUI(
@@ -172,16 +188,16 @@ function initGame() {
       if (e.code === 'Space' || e.code === 'Enter') {
         const res = garageUI.buyOrSelect();
         if (res.action === 'selected') {
-          currentScreen = 'TRACK_SELECT';
+          setScreen('TRACK_SELECT');
         }
       }
     } else if (currentScreen === 'TRACK_SELECT') {
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') trackSelectUI.prevTrack();
       if (e.code === 'KeyD' || e.code === 'ArrowRight') trackSelectUI.nextTrack();
       if (e.code === 'Enter' || e.code === 'Space') trackSelectUI.selectCurrent();
-      if (e.code === 'Escape') currentScreen = 'GARAGE';
+      if (e.code === 'Escape') setScreen('GARAGE');
     } else if (currentScreen === 'RACE') {
-      if (e.code === 'Escape') currentScreen = 'GARAGE';
+      if (e.code === 'Escape') setScreen('GARAGE');
     }
   });
 
@@ -195,6 +211,7 @@ function initGame() {
         return;
       }
       if (currentScreen === 'TRACK_SELECT') {
+        trackSelectUI.update(dt);
         return;
       }
 
