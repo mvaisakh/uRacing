@@ -289,78 +289,201 @@ export class ThreeRenderer {
     }
   }
 
-  _buildCarBody(group, style, L, W, H, bodyMat, glassMat, wheelMat) {
-    // Helper to add a box part
+  _buildCarBody(group, style, L, W, H, bodyMat, darkTrimMat, glassMat, tireMat, rimMat, lightMat, amberMat, tailMat) {
     const box = (lx, ly, lz, x, y, z, mat) => {
       const m = new THREE.Mesh(new THREE.BoxGeometry(lx, ly, lz), mat);
-      m.position.set(x, y, z); group.add(m); return m;
-    };
-    // Helper to add a wheel cylinder (axis along Z)
-    const wheel = (x, y, z) => {
-      const geo = new THREE.CylinderGeometry(5, 5, W + 4, 10);
-      geo.rotateX(Math.PI / 2);
-      const m = new THREE.Mesh(geo, wheelMat);
-      m.position.set(x, y, z); group.add(m);
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      group.add(m);
+      return m;
     };
 
-    const wY = 5; // wheel centre height
+    // Four separate wheel assemblies with tires + silver hubcaps
+    const addWheel = (x, y, z) => {
+      const tireGeo = new THREE.CylinderGeometry(4.2, 4.2, 3.2, 12);
+      tireGeo.rotateX(Math.PI / 2);
+      const tire = new THREE.Mesh(tireGeo, tireMat);
+      tire.position.set(x, y, z);
+
+      const rimGeo = new THREE.CylinderGeometry(2.4, 2.4, 3.4, 10);
+      rimGeo.rotateX(Math.PI / 2);
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      tire.add(rim);
+
+      group.add(tire);
+    };
+
+    const wY = 4.2; // Wheel center height
+    const wheelOffsetZ = W / 2 + 1;
+    const addFourWheels = (frontX, rearX) => {
+      addWheel(frontX, wY, wheelOffsetZ);
+      addWheel(frontX, wY, -wheelOffsetZ);
+      addWheel(rearX, wY, wheelOffsetZ);
+      addWheel(rearX, wY, -wheelOffsetZ);
+    };
+
+    // Standard low-poly detailing: side mirrors
+    const addMirrors = (mX, mY, mW) => {
+      box(1.5, 1.2, 1.8, mX, mY, mW / 2 + 1.2, darkTrimMat);
+      box(1.5, 1.2, 1.8, mX, mY, -(mW / 2 + 1.2), darkTrimMat);
+    };
 
     if (style === 'sedan') {
-      // Classic 3-box: long front hood, mid cabin, short trunk
-      box(L,      H,      W,      0,           H/2,    0,        bodyMat); // floor chassis
-      box(L*0.36, H*0.70, W-2,    -L*0.04,     H+H*0.35, 0,    glassMat); // passenger cabin
-      box(L*0.28, H*0.30, W-2,    L*0.28,      H+H*0.15, 0,    bodyMat); // engine hood slope
-      box(L*0.22, H*0.20, W-2,   -L*0.33,      H+H*0.10, 0,    bodyMat); // trunk slope
-      box(2, H*0.3, W-4,  L/2,   H*0.6,   0,  new THREE.MeshBasicMaterial({color:0xffffaa})); // headlights
-      wheel(L/2-7,  wY,  0);
-      wheel(-L/2+7, wY,  0);
+      // Reference-grade 90s low-poly sedan / executive car
+      // 1. Dark bottom bumper & skirt running all around
+      box(L + 1, H * 0.35, W, 0, H * 0.175 + 1.5, 0, darkTrimMat);
+      // Front lower grille slit
+      box(0.5, H * 0.15, W * 0.6, L / 2 + 0.6, H * 0.15 + 1.5, 0, new THREE.MeshBasicMaterial({ color: 0x050505 }));
+      
+      // 2. Main body hood & trunk
+      box(L, H * 0.45, W, 0, H * 0.55 + 1.5, 0, bodyMat);
+      
+      // 3. Cabin (tapered roof with pillar framing)
+      const cabL = L * 0.45;
+      const cabW = W * 0.88;
+      const cabH = H * 0.65;
+      const cabY = H * 0.85 + cabH / 2 + 1.5;
+      const cabX = -L * 0.05;
+      // Glass core
+      box(cabL, cabH, cabW, cabX, cabY, 0, glassMat);
+      // Colored roof plate
+      box(cabL + 0.5, 1, cabW + 0.5, cabX, cabY + cabH / 2 + 0.5, 0, bodyMat);
+      // Window pillar trim
+      box(1, cabH, cabW + 0.6, cabX + cabL / 2, cabY, 0, darkTrimMat); // A-pillar
+      box(1, cabH, cabW + 0.6, cabX - cabL / 2, cabY, 0, darkTrimMat); // C-pillar
+
+      // 4. Lights & Mirrors
+      // Headlights + Amber turn signals
+      box(1, H * 0.2, W * 0.25, L / 2 + 0.2, H * 0.55 + 1.5, W * 0.28, lightMat);
+      box(1, H * 0.2, W * 0.25, L / 2 + 0.2, H * 0.55 + 1.5, -W * 0.28, lightMat);
+      box(1.2, H * 0.2, W * 0.1, L / 2 + 0.1, H * 0.55 + 1.5, W * 0.42, amberMat);
+      box(1.2, H * 0.2, W * 0.1, L / 2 + 0.1, H * 0.55 + 1.5, -W * 0.42, amberMat);
+      // Taillights
+      box(0.8, H * 0.2, W * 0.35, -L / 2 - 0.2, H * 0.6 + 1.5, W * 0.28, tailMat);
+      box(0.8, H * 0.2, W * 0.35, -L / 2 - 0.2, H * 0.6 + 1.5, -W * 0.28, tailMat);
+      
+      addMirrors(cabX + cabL / 2 + 1, cabY - cabH * 0.3, W);
+      addFourWheels(L / 2 - 6, -L / 2 + 6);
 
     } else if (style === 'sports') {
-      // Low, wide, long hood, short cabin pushed far back, rear spoiler
-      const sH = H * 0.7;
-      box(L,      sH,     W*1.1,  0,           sH/2,   0,        bodyMat);
-      box(L*0.28, sH*0.70,W-4,   -L*0.15,      sH+sH*0.35, 0,   glassMat);
-      box(L*0.40, sH*0.15,W-2,    L*0.22,       sH+sH*0.08, 0,  bodyMat); // long hood
-      // rear spoiler
-      box(L*0.08, sH*0.40, W+4,  -L*0.42,      sH+sH*0.40, 0,  bodyMat);
-      box(2, sH*0.3, W-4, L/2,   sH*0.6, 0,    new THREE.MeshBasicMaterial({color:0xffffaa}));
-      wheel(L/2-7,  4, 0);
-      wheel(-L/2+7, 4, 0);
+      // Exotic low-poly wedge sports car / GT
+      const sH = H * 0.75;
+      // Low aero splitter
+      box(L + 2, sH * 0.25, W * 1.05, 0, sH * 0.12 + 1.5, 0, darkTrimMat);
+      // Wedge body
+      box(L, sH * 0.5, W, 0, sH * 0.45 + 1.5, 0, bodyMat);
+      // Aerodynamic sloping cockpit
+      const cabL = L * 0.38;
+      const cabW = W * 0.82;
+      const cabH = sH * 0.7;
+      const cabY = sH * 0.7 + cabH / 2 + 1.5;
+      const cabX = -L * 0.12;
+      box(cabL, cabH, cabW, cabX, cabY, 0, glassMat);
+      box(cabL, 0.8, cabW, cabX, cabY + cabH / 2 + 0.4, 0, bodyMat);
+      
+      // Sport rear wing spoiler
+      box(3, 1, W + 2, -L / 2 + 2, cabY + 1, 0, darkTrimMat);
+      box(1.5, cabY - sH * 0.5, 1, -L / 2 + 2, (cabY + sH * 0.5) / 2 + 1, W * 0.4, darkTrimMat);
+      box(1.5, cabY - sH * 0.5, 1, -L / 2 + 2, (cabY + sH * 0.5) / 2 + 1, -W * 0.4, darkTrimMat);
+
+      // Sleek slit headlights
+      box(1.5, sH * 0.15, W * 0.3, L / 2 - 1, sH * 0.65 + 1.5, W * 0.25, lightMat);
+      box(1.5, sH * 0.15, W * 0.3, L / 2 - 1, sH * 0.65 + 1.5, -W * 0.25, lightMat);
+      // Dual rear exhaust & taillight bar
+      box(0.6, sH * 0.12, W * 0.8, -L / 2 - 0.2, sH * 0.55 + 1.5, 0, tailMat);
+      box(1.5, 1.2, 1.2, -L / 2 - 0.5, 2.5, W * 0.25, darkTrimMat);
+      box(1.5, 1.2, 1.2, -L / 2 - 0.5, 2.5, -W * 0.25, darkTrimMat);
+
+      addMirrors(cabX + cabL / 2, cabY - cabH * 0.2, W);
+      addFourWheels(L / 2 - 6, -L / 2 + 6);
 
     } else if (style === 'hatchback') {
-      // Compact, tallish cabin that runs all the way to the rear — no trunk
-      box(L,      H,      W,      0,           H/2,   0,         bodyMat);
-      box(L*0.50, H*0.80, W-2,   -L*0.12,      H+H*0.40, 0,    glassMat); // big tall cabin
-      box(L*0.28, H*0.20, W-2,    L*0.27,      H+H*0.10, 0,    bodyMat); // short hood
-      box(2, H*0.3, W-4,  L/2,   H*0.65, 0,   new THREE.MeshBasicMaterial({color:0xffffaa}));
-      wheel(L/2-6,  wY, 0);
-      wheel(-L/2+6, wY, 0);
+      // 90s Japanese Compact / Hot Hatch (green car in reference image 1)
+      box(L + 1, H * 0.4, W, 0, H * 0.2 + 1.5, 0, darkTrimMat); // Dark bumper / skirts
+      box(L, H * 0.45, W, 0, H * 0.6 + 1.5, 0, bodyMat); // Mid body
+      
+      // Tall hatchback cabin extending all the way to rear
+      const cabL = L * 0.54;
+      const cabW = W * 0.88;
+      const cabH = H * 0.75;
+      const cabY = H * 0.85 + cabH / 2 + 1.5;
+      const cabX = -L * 0.12;
+      box(cabL, cabH, cabW, cabX, cabY, 0, glassMat);
+      box(cabL + 0.6, 1, cabW + 0.6, cabX, cabY + cabH / 2 + 0.5, 0, bodyMat);
+      // Window frame pillars
+      box(1, cabH, cabW + 0.6, cabX + cabL / 2, cabY, 0, darkTrimMat); // A-pillar
+      box(1, cabH, cabW + 0.6, cabX - 1, cabY, 0, darkTrimMat); // B-pillar
+      box(1.5, cabH, cabW + 0.6, cabX - cabL / 2, cabY, 0, bodyMat); // Thick C-pillar
+
+      // Front headlights with side amber wraparounds
+      box(1, H * 0.22, W * 0.25, L / 2 + 0.2, H * 0.62 + 1.5, W * 0.26, lightMat);
+      box(1, H * 0.22, W * 0.25, L / 2 + 0.2, H * 0.62 + 1.5, -W * 0.26, lightMat);
+      box(1.2, H * 0.22, W * 0.1, L / 2 + 0.1, H * 0.62 + 1.5, W * 0.42, amberMat);
+      box(1.2, H * 0.22, W * 0.1, L / 2 + 0.1, H * 0.62 + 1.5, -W * 0.42, amberMat);
+      // Vertical tail lamp clusters on rear corners
+      box(0.8, H * 0.4, 2, -L / 2 - 0.2, H * 0.8 + 1.5, W * 0.42, tailMat);
+      box(0.8, H * 0.4, 2, -L / 2 - 0.2, H * 0.8 + 1.5, -W * 0.42, tailMat);
+
+      addMirrors(cabX + cabL / 2 + 1, cabY - cabH * 0.3, W);
+      addFourWheels(L / 2 - 5, -L / 2 + 5);
 
     } else if (style === 'suv') {
-      // Tall, wide, boxy — roof rack bars on top
-      const sH = H * 1.3;
-      box(L,      sH,     W*1.2,  0,           sH/2,   0,        bodyMat);
-      box(L*0.52, sH*0.65,W*1.2-2,-L*0.04,     sH+sH*0.33, 0,  glassMat);
-      box(L*0.20, sH*0.20,W*1.2-2, L*0.32,     sH+sH*0.10, 0,  bodyMat);
-      // Roof rack
-      box(L*0.40, 2,      4,      -L*0.10,     sH*1.67, -W*0.5, bodyMat);
-      box(L*0.40, 2,      4,      -L*0.10,     sH*1.67,  W*0.5, bodyMat);
-      box(2, H*0.3, W-4,  L/2,   sH*0.6, 0,   new THREE.MeshBasicMaterial({color:0xffffaa}));
-      wheel(L/2-8,  wY, 0);
-      wheel(-L/2+8, wY, 0);
+      // Rugged low-poly 4x4 Utility SUV
+      const sH = H * 1.25;
+      const sW = W * 1.15;
+      // Heavy dark cladding & bull-bar front
+      box(L + 2, sH * 0.35, sW, 0, sH * 0.175 + 1.8, 0, darkTrimMat);
+      box(1.2, sH * 0.45, sW * 0.6, L / 2 + 1.3, sH * 0.3 + 1.8, 0, darkTrimMat); // Front push guard
+      
+      // Main blocky body
+      box(L, sH * 0.45, sW, 0, sH * 0.55 + 1.8, 0, bodyMat);
+      
+      // Tall rectangular wagon cabin
+      const cabL = L * 0.58;
+      const cabW = sW * 0.88;
+      const cabH = sH * 0.65;
+      const cabY = sH * 0.8 + cabH / 2 + 1.8;
+      const cabX = -L * 0.08;
+      box(cabL, cabH, cabW, cabX, cabY, 0, glassMat);
+      box(cabL + 0.6, 1.2, cabW + 0.6, cabX, cabY + cabH / 2 + 0.6, 0, bodyMat); // Roof
+      // Roof rack rails & crossbars
+      box(cabL * 0.8, 1, 1, cabX, cabY + cabH / 2 + 1.8, cabW / 2 - 1, darkTrimMat);
+      box(cabL * 0.8, 1, 1, cabX, cabY + cabH / 2 + 1.8, -cabW / 2 + 1, darkTrimMat);
+      box(1, 1, cabW - 2, cabX + cabL * 0.25, cabY + cabH / 2 + 1.8, 0, darkTrimMat);
+      box(1, 1, cabW - 2, cabX - cabL * 0.25, cabY + cabH / 2 + 1.8, 0, darkTrimMat);
 
-    } else { // mini / city car
-      // Short, tall, rounded feel — big wheels relative to size
-      const mL = L * 0.75, mW = W * 0.9, mH = H * 1.1;
-      box(mL,     mH,     mW,     0,           mH/2,  0,         bodyMat);
-      box(mL*0.7, mH*0.75,mW-2,   0,           mH+mH*0.38, 0,  glassMat);
-      box(mL*0.18,mH*0.15,mW-2,   mL*0.36,     mH+mH*0.08, 0,  bodyMat);
-      box(2, mH*0.3, mW-4, mL/2,  mH*0.6, 0,  new THREE.MeshBasicMaterial({color:0xffffaa}));
-      const geo = new THREE.CylinderGeometry(6, 6, mW+4, 10);
-      geo.rotateX(Math.PI / 2);
-      const wf = new THREE.Mesh(geo, wheelMat); wf.position.set(mL/2-5, 6, 0); group.add(wf);
-      const wb = new THREE.Mesh(geo.clone(), wheelMat); wb.position.set(-mL/2+5, 6, 0); group.add(wb);
-      return; // already added wheels above
+      // Round / rectangular rugged headlights
+      box(1.2, sH * 0.22, sW * 0.22, L / 2 + 0.2, sH * 0.55 + 1.8, sW * 0.3, lightMat);
+      box(1.2, sH * 0.22, sW * 0.22, L / 2 + 0.2, sH * 0.55 + 1.8, -sW * 0.3, lightMat);
+      box(0.8, sH * 0.3, sW * 0.25, -L / 2 - 0.2, sH * 0.65 + 1.8, sW * 0.3, tailMat);
+      box(0.8, sH * 0.3, sW * 0.25, -L / 2 - 0.2, sH * 0.65 + 1.8, -sW * 0.3, tailMat);
+
+      addMirrors(cabX + cabL / 2 + 1, cabY - cabH * 0.2, sW);
+      addFourWheels(L / 2 - 6, -L / 2 + 6);
+
+    } else {
+      // Micro / Mini Commuter (chunky urban toy)
+      const mL = L * 0.78;
+      const mW = W * 0.92;
+      const mH = H * 1.05;
+      box(mL + 1, mH * 0.35, mW, 0, mH * 0.175 + 1.5, 0, darkTrimMat);
+      box(mL, mH * 0.45, mW, 0, mH * 0.55 + 1.5, 0, bodyMat);
+      
+      const cabL = mL * 0.65;
+      const cabW = mW * 0.86;
+      const cabH = mH * 0.75;
+      const cabY = mH * 0.8 + cabH / 2 + 1.5;
+      box(cabL, cabH, cabW, 0, cabY, 0, glassMat);
+      box(cabL + 0.5, 1, cabW + 0.5, 0, cabY + cabH / 2 + 0.5, 0, bodyMat);
+
+      box(1, mH * 0.25, mW * 0.26, mL / 2 + 0.2, mH * 0.55 + 1.5, mW * 0.26, lightMat);
+      box(1, mH * 0.25, mW * 0.26, mL / 2 + 0.2, mH * 0.55 + 1.5, -mW * 0.26, lightMat);
+      box(0.8, mH * 0.25, mW * 0.26, -mL / 2 - 0.2, mH * 0.55 + 1.5, mW * 0.26, tailMat);
+      box(0.8, mH * 0.25, mW * 0.26, -mL / 2 - 0.2, mH * 0.55 + 1.5, -mW * 0.26, tailMat);
+
+      addMirrors(cabL / 2, cabY - cabH * 0.3, mW);
+      addFourWheels(mL / 2 - 4.5, -mL / 2 + 4.5);
     }
   }
 
@@ -371,36 +494,44 @@ export class ThreeRenderer {
 
     const group = new THREE.Group();
     
-    const bodyMat = new THREE.MeshPhysicalMaterial({
-        color: car.spec.color,
-        metalness: 0.1,
-        roughness: 0.1,
-        clearcoat: 0.9,
-        clearcoatRoughness: 0.05
+    // Matte / Flat-shaded Lambert materials for authentic low-poly toy look matching reference images
+    const bodyMat = new THREE.MeshLambertMaterial({
+        color: new THREE.Color(car.spec.color)
     });
-    const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0x111122,
-        metalness: 0.7,
-        roughness: 0.1,
-        transparent: true,
-        opacity: 0.85
+    const darkTrimMat = new THREE.MeshLambertMaterial({
+        color: 0x24272c // Charcoal bumper and side skirt
     });
-    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+    const glassMat = new THREE.MeshLambertMaterial({
+        color: 0x3d4b58 // Tinted low-poly glass
+    });
+    const tireMat = new THREE.MeshLambertMaterial({
+        color: 0x181a1d
+    });
+    const rimMat = new THREE.MeshLambertMaterial({
+        color: 0xc8ced6 // Silver hubcaps
+    });
+    const lightMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff // White headlights
+    });
+    const amberMat = new THREE.MeshBasicMaterial({
+        color: 0xff9900 // Amber corner turn signals
+    });
+    const tailMat = new THREE.MeshBasicMaterial({
+        color: 0xd62828 // Red taillights
+    });
 
-    // Dimensions still vary by stats for proportional variety even within styles
     const stats = car.spec.stats;
     const speedNorm  = stats ? Math.min((stats.topSpeed  - 380) / 140, 1) : 0.5;
     const weightNorm = stats ? Math.min((stats.weight    - 0.9)  / 0.9, 1) : 0.5;
-    const W = 14 + weightNorm * 8;  // 14–22
-    const L = 28 + speedNorm  * 14; // 28–42
-    const H = 7  + weightNorm * 6;  // 7–13
+    const W = 15 + weightNorm * 7;
+    const L = 29 + speedNorm  * 13;
+    const H = 7.5 + weightNorm * 5;
 
     const style = car.spec.bodyStyle || 'sedan';
-    this._buildCarBody(group, style, L, W, H, bodyMat, glassMat, wheelMat);
+    this._buildCarBody(group, style, L, W, H, bodyMat, darkTrimMat, glassMat, tireMat, rimMat, lightMat, amberMat, tailMat);
 
-    
     this.scene.add(group);
-    this.carMeshes.set(id, { group, velY: 0 }); // velY tracks gravity between frames
+    this.carMeshes.set(id, { group, velY: 0 });
   }
 
   updateCar(id, car, dt = 0.016) {
