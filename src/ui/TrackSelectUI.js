@@ -540,36 +540,36 @@ export class TrackSelectUI {
     const stepBtnSize = 32;
     const plusX = x + oppW + 24 - 16 - stepBtnSize;
     const minusX = plusX - stepBtnSize - 54;
-    const btnY = oppY + (oppH - stepBtnSize) / 2;
+    const stepBtnY = oppY + (oppH - stepBtnSize) / 2;
 
     // Minus Button
     ctx.fillStyle = oppCount > 1 ? 'rgba(231, 76, 60, 0.25)' : 'rgba(255, 255, 255, 0.05)';
-    this._roundRect(ctx, minusX, btnY, stepBtnSize, stepBtnSize, 6, true, false);
+    this._roundRect(ctx, minusX, stepBtnY, stepBtnSize, stepBtnSize, 6, true, false);
     ctx.strokeStyle = oppCount > 1 ? '#e74c3c' : 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1.5;
-    this._roundRect(ctx, minusX, btnY, stepBtnSize, stepBtnSize, 6, false, true);
+    this._roundRect(ctx, minusX, stepBtnY, stepBtnSize, stepBtnSize, 6, false, true);
 
     ctx.fillStyle = oppCount > 1 ? '#ffffff' : '#636e72';
     ctx.font = 'bold 18px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('-', minusX + stepBtnSize / 2, btnY + stepBtnSize / 2);
+    ctx.fillText('-', minusX + stepBtnSize / 2, stepBtnY + stepBtnSize / 2);
 
     // Number Count Badge
     ctx.fillStyle = '#00f2fe';
     ctx.font = 'bold 22px "Impact", sans-serif';
-    ctx.fillText(`${oppCount} AI`, minusX + stepBtnSize + 27, btnY + stepBtnSize / 2);
+    ctx.fillText(`${oppCount} AI`, minusX + stepBtnSize + 27, stepBtnY + stepBtnSize / 2);
 
     // Plus Button
     ctx.fillStyle = oppCount < 9 ? 'rgba(46, 204, 113, 0.25)' : 'rgba(255, 255, 255, 0.05)';
-    this._roundRect(ctx, plusX, btnY, stepBtnSize, stepBtnSize, 6, true, false);
+    this._roundRect(ctx, plusX, stepBtnY, stepBtnSize, stepBtnSize, 6, true, false);
     ctx.strokeStyle = oppCount < 9 ? '#2ecc71' : 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1.5;
-    this._roundRect(ctx, plusX, btnY, stepBtnSize, stepBtnSize, 6, false, true);
+    this._roundRect(ctx, plusX, stepBtnY, stepBtnSize, stepBtnSize, 6, false, true);
 
     ctx.fillStyle = oppCount < 9 ? '#ffffff' : '#636e72';
     ctx.font = 'bold 18px monospace';
-    ctx.fillText('+', plusX + stepBtnSize / 2, btnY + stepBtnSize / 2);
+    ctx.fillText('+', plusX + stepBtnSize / 2, stepBtnY + stepBtnSize / 2);
 
     ctx.textBaseline = 'alphabetic'; // reset
 
@@ -577,20 +577,20 @@ export class TrackSelectUI {
     const btnW = w - 48;
     const btnH = 52;
     const btnX = x + 24;
-    const btnY = h - 68 + y;
+    const ctaBtnY = h - 68 + y;
 
     const pulse = Math.sin(this.animTime * 4) * 0.2 + 0.8;
     ctx.fillStyle = '#2ecc71';
-    this._roundRect(ctx, btnX, btnY, btnW, btnH, 8, true, false);
+    this._roundRect(ctx, btnX, ctaBtnY, btnW, btnH, 8, true, false);
 
     ctx.strokeStyle = `rgba(255, 255, 255, ${pulse})`;
     ctx.lineWidth = 2;
-    this._roundRect(ctx, btnX, btnY, btnW, btnH, 8, false, true);
+    this._roundRect(ctx, btnX, ctaBtnY, btnW, btnH, 8, false, true);
 
     ctx.fillStyle = '#0a1d12';
     ctx.font = 'bold 18px "Impact", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('RACE THIS CIRCUIT [ENTER]', btnX + btnW / 2, btnY + 34);
+    ctx.fillText('RACE THIS CIRCUIT [ENTER]', btnX + btnW / 2, ctaBtnY + 34);
   }
 
   _renderChevrons(ctx, width, height) {
