@@ -195,18 +195,35 @@ export class ThreeRenderer {
 
     if (!splineSamples || splineSamples.length === 0) return;
 
-    // Lift the whole track 3 units above the ground plane (which is at Y=-3)
-    // so the top surface is always at Y≥3, preventing Z-fighting with the ground.
+    // Lift the whole track 3 units above the ground plane (which is at Y=-3).
     const trackBaseY = 3;
     const totalLen = splineSamples.length;
+
+    // Trackmania-style elevation profile — smooth sin() easing between sections.
+    // Each entry: [startPct, endPct, startY, peakY]
+    // Between entries, the track blends smoothly.
+    const elevFn = (p) => {
+        // smooth ease helper (0→1 sin curve)
+        const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+
+        if (p < 0.10)                    return trackBaseY;                        // flat start straight
+        if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; } // rise
+        if (p < 0.28)                    return trackBaseY + 20;                   // elevated plateau
+        if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; } // launch ramp
+        if (p < 0.40)                    return trackBaseY + 50;                   // ramp lip (airtime zone)
+        if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; } // drop
+        if (p < 0.55)                    return trackBaseY - 5;                    // valley floor
+        if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; } // second ramp
+        if (p < 0.68)                    return trackBaseY + 30;                   // second peak
+        if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; } // descent
+        if (p < 0.90)                    return trackBaseY;                        // flat approach
+        if (p < 1.00) { const t = (p - 0.90) / 0.10; return trackBaseY; }        // smooth close
+        return trackBaseY;
+    };
+
     const pts = splineSamples.map((s, idx) => {
         const progress = idx / totalLen;
-        // Gentle jump ramp: 0→peak(25u)→0 between 35%–65% of lap
-        let elevation = trackBaseY;
-        if (progress > 0.35 && progress < 0.65) {
-            elevation += Math.sin((progress - 0.35) * Math.PI / 0.30) * 25;
-        }
-        return new THREE.Vector3(s.point.x, elevation, s.point.y);
+        return new THREE.Vector3(s.point.x, elevFn(progress), s.point.y);
     });
     
     const curve = new THREE.CatmullRomCurve3(pts, true);
