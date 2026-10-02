@@ -308,11 +308,12 @@ export class ThreeRenderer {
     const carPos = carGroup.position.clone();
     let targetAngle = -car.body.angle;
     
-    // Smooth angle interpolation to prevent whipping on sharp turns
+    // Smooth angle interpolation — factor 0.8 means camera lazily chases the car's heading
+    // so sharp turns don't whip the view. Increase toward 5.0 for tighter follow.
     let diff = targetAngle - this.cameraAngle;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    this.cameraAngle += diff * (2.0 * dt);
+    this.cameraAngle += diff * (0.8 * dt);
     
     const dx = Math.cos(this.cameraAngle) * -chaseDist;
     const dz = Math.sin(this.cameraAngle) * -chaseDist;
