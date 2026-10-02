@@ -271,18 +271,18 @@ export class TouchControls {
     const stepBtnSize = 42; // slightly larger touch hitbox for fingers
     const plusX = rightX + 24 + oppW - 16 - 32;
     const minusX = plusX - 32 - 54;
-    const btnY = oppY + (oppH - stepBtnSize) / 2;
+    const stepBtnY = oppY + (oppH - stepBtnSize) / 2;
 
-    this._registerButton('oppMinus', minusX - 5, btnY - 5, stepBtnSize + 10, stepBtnSize + 10);
-    this._registerButton('oppPlus', plusX - 5, btnY - 5, stepBtnSize + 10, stepBtnSize + 10);
+    this._registerButton('oppMinus', minusX - 5, stepBtnY - 5, stepBtnSize + 10, stepBtnSize + 10);
+    this._registerButton('oppPlus', plusX - 5, stepBtnY - 5, stepBtnSize + 10, stepBtnSize + 10);
 
     // Race Start Action CTA target
     const btnW = rightW - 48;
     const btnH = 58;
     const btnX = rightX + 24;
-    const btnY = mainH - 74 + mainY;
+    const ctaBtnY = mainH - 74 + mainY;
 
-    this._registerButton('menuAction', btnX, btnY, btnW, btnH);
+    this._registerButton('menuAction', btnX, ctaBtnY, btnW, btnH);
   }
 
   _registerButton(id, x, y, w, h) {
