@@ -11,6 +11,8 @@ export class ThreeRenderer {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(canvasWidth, canvasHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // Inject canvas behind the 2D UI canvas
     this.domElement = this.renderer.domElement;
@@ -33,12 +35,52 @@ export class ThreeRenderer {
     
     this.camera = new THREE.PerspectiveCamera(60, canvasWidth / canvasHeight, 1, 10000);
     
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    this.scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(100, 300, 100);
-    dir.castShadow = true;
-    this.scene.add(dir);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    this.scene.add(this.ambientLight);
+    this.dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+    this.dirLight.position.set(100, 300, 100);
+    this.dirLight.castShadow = true;
+    this.dirLight.shadow.mapSize.width = 2048;
+    this.dirLight.shadow.mapSize.height = 2048;
+    this.dirLight.shadow.camera.near = 10;
+    this.dirLight.shadow.camera.far = 1500;
+    this.dirLight.shadow.camera.left = -600;
+    this.dirLight.shadow.camera.right = 600;
+    this.dirLight.shadow.camera.top = 600;
+    this.dirLight.shadow.camera.bottom = -600;
+    this.dirLight.shadow.bias = -0.0005;
+    this.scene.add(this.dirLight);
+
+    // Dedicated Garage Studio Lighting Group
+    this.garageLights = new THREE.Group();
+    const garageKey = new THREE.DirectionalLight(0xfff5ea, 1.25);
+    garageKey.position.set(50, 75, 60);
+    garageKey.castShadow = true;
+    garageKey.shadow.mapSize.width = 1024;
+    garageKey.shadow.mapSize.height = 1024;
+    garageKey.shadow.camera.near = 10;
+    garageKey.shadow.camera.far = 250;
+    garageKey.shadow.camera.left = -40;
+    garageKey.shadow.camera.right = 40;
+    garageKey.shadow.camera.top = 40;
+    garageKey.shadow.camera.bottom = -40;
+    garageKey.shadow.bias = -0.0005;
+    this.garageLights.add(garageKey);
+
+    const garageFill = new THREE.DirectionalLight(0x9fc5e8, 0.7);
+    garageFill.position.set(-60, 45, 30);
+    this.garageLights.add(garageFill);
+
+    const garageRim = new THREE.DirectionalLight(0xffffff, 0.95);
+    garageRim.position.set(0, 50, -60);
+    this.garageLights.add(garageRim);
+
+    const garageSpot = new THREE.PointLight(0x00f2fe, 1.2, 80);
+    garageSpot.position.set(0, 3, 0);
+    this.garageLights.add(garageSpot);
+
+    this.garageLights.visible = false;
+    this.scene.add(this.garageLights);
 
     this.carMeshes = new Map();
     this.trackMeshes = [];
@@ -927,13 +969,14 @@ export class ThreeRenderer {
     
     if (!this.garagePedestal) {
         const pedGeo = new THREE.CylinderGeometry(25, 28, 5, 32);
-        const pedMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+        const pedMat = new THREE.MeshStandardMaterial({ color: 0x1c1e22, roughness: 0.35, metalness: 0.5 });
         this.garagePedestal = new THREE.Mesh(pedGeo, pedMat);
         this.garagePedestal.position.y = -2.5;
+        this.garagePedestal.receiveShadow = true;
         this.scene.add(this.garagePedestal);
         
-        // Neon ring
-        const ringGeo = new THREE.TorusGeometry(25, 0.5, 8, 32);
+        // Neon ring around pedestal base
+        const ringGeo = new THREE.TorusGeometry(25, 0.6, 8, 32);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = -Math.PI / 2;
@@ -943,6 +986,11 @@ export class ThreeRenderer {
     
     if (active && previewCar) {
         this.scene.background = new THREE.Color(0x0f1318);
+        this.scene.fog = null;
+        if (this.dirLight) this.dirLight.visible = false;
+        if (this.garageLights) this.garageLights.visible = true;
+        if (this.ambientLight) this.ambientLight.intensity = 0.35;
+
         this.trackMeshes.forEach(m => m.visible = false);
         this.carMeshes.forEach((mesh, id) => {
             if (id !== 'preview') mesh.group.visible = false;
@@ -955,15 +1003,21 @@ export class ThreeRenderer {
         let pMesh = this.carMeshes.get('preview');
         pMesh.group.visible = true;
         
-        // Put car at center, on pedestal
+        // Put car on rotating pedestal
+        const rotY = -(previewCar.body.angle || 0);
         pMesh.group.position.set(0, 0, 0);
+        pMesh.group.rotation.y = rotY;
+        this.garagePedestal.rotation.y = rotY;
         this.garagePedestal.visible = true;
         
-        // Setup garage camera
-        this.camera.position.set(40, 20, 50);
-        this.camera.lookAt(0, 0, 0);
+        // Studio camera framing
+        this.camera.position.set(40, 22, 50);
+        this.camera.lookAt(0, 2, 0);
     } else {
-        this.scene.fog = null; // track's _buildThemeEnvironment will reset fog
+        if (this.dirLight) this.dirLight.visible = true;
+        if (this.garageLights) this.garageLights.visible = false;
+        if (this.ambientLight) this.ambientLight.intensity = 0.6;
+
         this.trackMeshes.forEach(m => m.visible = true);
         this.carMeshes.forEach((mesh, id) => {
             if (id !== 'preview') mesh.group.visible = true;
