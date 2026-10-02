@@ -863,10 +863,18 @@ export class ThreeRenderer {
       return this.loadedTextures.get(modelId);
     }
     const modelData = CAR_MODELS_DATA[modelId];
-    if (!modelData || !modelData.texture) return null;
+    if (!modelData) return null;
 
-    const tex = this.textureLoader.load(modelData.texture);
+    const src = modelData.textureDataUri || modelData.texture;
+    if (!src) return null;
+
+    const tex = this.textureLoader.load(src, (t) => {
+      t.needsUpdate = true;
+    });
     tex.flipY = true;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
     this.loadedTextures.set(modelId, tex);
     return tex;
   }
@@ -884,14 +892,66 @@ export class ThreeRenderer {
       const geom = this._getModelGeometry(modelId);
       const texture = this._getModelTexture(modelId);
       
-      const mat = new THREE.MeshLambertMaterial({
+      const mat = new THREE.MeshStandardMaterial({
         map: texture,
-        color: new THREE.Color(0xffffff)
+        color: new THREE.Color(car.spec.color || 0xffffff),
+        roughness: 0.35,
+        metalness: 0.25
       });
       const carMesh = new THREE.Mesh(geom, mat);
       carMesh.castShadow = true;
       carMesh.receiveShadow = true;
       group.add(carMesh);
+
+      // Model-specific accessories / details
+      const extra = CAR_MODELS_DATA[modelId].extra;
+      if (extra === 'taxi') {
+        const signGeo = new THREE.BoxGeometry(4, 2, 7);
+        const signMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        const signMesh = new THREE.Mesh(signGeo, signMat);
+        signMesh.position.set(-1, 14.5, 0);
+        group.add(signMesh);
+      } else if (extra === 'police') {
+        const barGeo = new THREE.BoxGeometry(3, 1.5, 14);
+        const barMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const bar = new THREE.Mesh(barGeo, barMat);
+        bar.position.set(-2, 14.5, 0);
+        const redGeo = new THREE.BoxGeometry(3.2, 1.6, 6);
+        const redMat = new THREE.MeshBasicMaterial({ color: 0xff0022 });
+        const redLight = new THREE.Mesh(redGeo, redMat);
+        redLight.position.set(0, 0, 3.5);
+        bar.add(redLight);
+        const blueGeo = new THREE.BoxGeometry(3.2, 1.6, 6);
+        const blueMat = new THREE.MeshBasicMaterial({ color: 0x0066ff });
+        const blueLight = new THREE.Mesh(blueGeo, blueMat);
+        blueLight.position.set(0, 0, -3.5);
+        bar.add(blueLight);
+        group.add(bar);
+      } else if (extra === 'rally') {
+        const wingGeo = new THREE.BoxGeometry(2.5, 0.8, 18);
+        const wingMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4 });
+        const wing = new THREE.Mesh(wingGeo, wingMat);
+        wing.position.set(-15, 13.5, 0);
+        const postL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4, 1), wingMat);
+        postL.position.set(0, -2, 6);
+        const postR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4, 1), wingMat);
+        postR.position.set(0, -2, -6);
+        wing.add(postL);
+        wing.add(postR);
+        group.add(wing);
+      } else if (extra === 'spoiler') {
+        const wingGeo = new THREE.BoxGeometry(2.8, 0.8, 20);
+        const wingMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
+        const wing = new THREE.Mesh(wingGeo, wingMat);
+        wing.position.set(-16, 12.5, 0);
+        const postL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.5, 1.2), wingMat);
+        postL.position.set(0, -1.8, 7);
+        const postR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.5, 1.2), wingMat);
+        postR.position.set(0, -1.8, -7);
+        wing.add(postL);
+        wing.add(postR);
+        group.add(wing);
+      }
 
       // Add miniature toy underbody shadow plate
       const shadowGeo = new THREE.PlaneGeometry(36, 17);

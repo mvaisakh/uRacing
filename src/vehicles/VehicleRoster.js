@@ -242,5 +242,85 @@ export const VEHICLE_ROSTER = {
       "grip": 0.93,
       "driftFactor": 0.95
     }
+  },
+  "taxi_yellow": {
+    "id": "taxi_yellow",
+    "name": "Metro Yellow Cab",
+    "era": "Classic City Taxi",
+    "description": "Iconic urban cab built like a tank with brisk stop-and-go acceleration.",
+    "modelId": "car_13",
+    "cost": 750,
+    "color": "#f1c40f",
+    "accentColor": "#2c3e50",
+    "stripeColor": null,
+    "stats": {
+      "topSpeed": 435,
+      "acceleration": 470,
+      "braking": 510,
+      "weight": 1.35,
+      "steerRate": 2.9,
+      "grip": 0.88,
+      "driftFactor": 0.93
+    }
+  },
+  "police_enforcer": {
+    "id": "police_enforcer",
+    "name": "State Interceptor",
+    "era": "Highway Pursuit Cruiser",
+    "description": "Heavy-duty pursuit interceptor with siren lightbar and massive ramming power.",
+    "modelId": "car_14",
+    "cost": 1600,
+    "color": "#1e272e",
+    "accentColor": "#ffffff",
+    "stripeColor": null,
+    "stats": {
+      "topSpeed": 480,
+      "acceleration": 460,
+      "braking": 550,
+      "weight": 1.65,
+      "steerRate": 3.1,
+      "grip": 0.92,
+      "driftFactor": 0.94
+    }
+  },
+  "rally_monster": {
+    "id": "rally_monster",
+    "name": "Baja Storm Rally",
+    "era": "Desert Rally Spec",
+    "description": "All-wheel-drive dirt beast with high-downforce rear wing and sharp slide recovery.",
+    "modelId": "car_15",
+    "cost": 2300,
+    "color": "#e67e22",
+    "accentColor": "#2ecc71",
+    "stripeColor": null,
+    "stats": {
+      "topSpeed": 455,
+      "acceleration": 525,
+      "braking": 560,
+      "weight": 1.12,
+      "steerRate": 3.6,
+      "grip": 0.95,
+      "driftFactor": 0.96
+    }
+  },
+  "samara_gt": {
+    "id": "samara_gt",
+    "name": "Volga 2108 Sprint",
+    "era": "East-Bloc Turbo Hatch",
+    "description": "Lightweight 80s front-wheel drive classic with raspy exhaust and quick flick turn-in.",
+    "modelId": "car_16",
+    "cost": 3000,
+    "color": "#9b59b6",
+    "accentColor": "#f1c40f",
+    "stripeColor": null,
+    "stats": {
+      "topSpeed": 470,
+      "acceleration": 505,
+      "braking": 530,
+      "weight": 1.02,
+      "steerRate": 3.7,
+      "grip": 0.93,
+      "driftFactor": 0.95
+    }
   }
 };
