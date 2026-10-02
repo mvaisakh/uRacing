@@ -684,8 +684,182 @@ export class ThreeRenderer {
         }
     }
 
+    // Start / Finish Line Ground Markings & Overhead Gantry Arch
+    this._buildStartFinishArch(splineSamples, trackWidth, elevFn);
+
     // Procedural Road-Rash style dense roadside item scattering (pencils, erasers, sharpeners, paints, utensils, vegetables)
     this._scatterProceduralFlatProps(splineSamples, trackWidth, trackConfig.environment || 'kitchen');
+  }
+
+  _buildStartFinishArch(splineSamples, trackWidth, elevFn) {
+    if (!splineSamples || splineSamples.length === 0) return;
+
+    const s0 = splineSamples[0];
+    const pt = s0.point;
+    const norm = s0.normal;
+    const tan = s0.tangent;
+    const baseElev = elevFn ? elevFn(0) : 3;
+
+    const halfW = trackWidth / 2;
+    const archH = 75;
+    const postRadius = 4.2;
+    const spanW = trackWidth + 18;
+
+    const archGroup = new THREE.Group();
+
+    // 1. Checkered Start/Finish Ground Decal Ribbon
+    const checkCanvas = document.createElement('canvas');
+    checkCanvas.width = 128;
+    checkCanvas.height = 32;
+    const cctx = checkCanvas.getContext('2d');
+    const cols = 8;
+    const rows = 2;
+    const cellW = 128 / cols;
+    const cellH = 32 / rows;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        cctx.fillStyle = ((r + c) % 2 === 0) ? '#ffffff' : '#111111';
+        cctx.fillRect(c * cellW, r * cellH, cellW, cellH);
+      }
+    }
+    // Red/White start accent stripes on front and back
+    cctx.fillStyle = '#ff0000';
+    cctx.fillRect(0, 0, 128, 3);
+    cctx.fillRect(0, 29, 128, 3);
+
+    const checkTex = new THREE.CanvasTexture(checkCanvas);
+    checkTex.wrapS = THREE.RepeatWrapping;
+    checkTex.wrapT = THREE.RepeatWrapping;
+    checkTex.repeat.set(4, 1);
+
+    const checkMat = new THREE.MeshLambertMaterial({
+      map: checkTex,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2
+    });
+
+    const groundMarkingGeo = new THREE.PlaneGeometry(trackWidth * 0.98, 22);
+    const groundMarking = new THREE.Mesh(groundMarkingGeo, checkMat);
+    groundMarking.rotation.x = -Math.PI / 2;
+    groundMarking.position.set(0, 0.4, 0); // slightly above track surface
+    archGroup.add(groundMarking);
+
+    // 2. Metal Truss Support Pillars on Left & Right Margins
+    const trussMat = new THREE.MeshStandardMaterial({
+      color: 0x3d4451,
+      metalness: 0.85,
+      roughness: 0.25
+    });
+    const postMat = new THREE.MeshStandardMaterial({
+      color: 0x1e272e,
+      metalness: 0.7,
+      roughness: 0.3
+    });
+    const padMat = new THREE.MeshLambertMaterial({ color: 0xf1c40f }); // yellow hazard base pads
+
+    [-1, 1].forEach((side) => {
+      const px = side * (halfW + 9);
+
+      // Heavy hazard base pedestal
+      const padGeo = new THREE.BoxGeometry(16, 8, 16);
+      const pad = new THREE.Mesh(padGeo, padMat);
+      pad.position.set(px, 4, 0);
+      pad.castShadow = true;
+      pad.receiveShadow = true;
+      archGroup.add(pad);
+
+      // Main vertical upright column
+      const postGeo = new THREE.CylinderGeometry(postRadius, postRadius, archH, 16);
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.set(px, archH / 2 + 6, 0);
+      post.castShadow = true;
+      post.receiveShadow = true;
+      archGroup.add(post);
+
+      // Secondary structural truss rod
+      const strutGeo = new THREE.CylinderGeometry(postRadius * 0.55, postRadius * 0.55, archH * 0.92, 10);
+      const strut = new THREE.Mesh(strutGeo, trussMat);
+      strut.position.set(px - side * 4, archH / 2 + 6, -5);
+      strut.castShadow = true;
+      archGroup.add(strut);
+    });
+
+    // 3. Horizontal Overhead Crossbar Truss
+    const barGeo = new THREE.BoxGeometry(spanW, 8, 12);
+    const bar = new THREE.Mesh(barGeo, trussMat);
+    bar.position.set(0, archH + 6, 0);
+    bar.castShadow = true;
+    archGroup.add(bar);
+
+    // 4. Overhead Gantry Signboard (Double-sided START / FINISH)
+    const signW = Math.min(180, trackWidth * 0.88);
+    const signH = 26;
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = 512;
+    signCanvas.height = 128;
+    const sctx = signCanvas.getContext('2d');
+
+    // Sign background with checkered header strip
+    sctx.fillStyle = '#0f172a';
+    sctx.fillRect(0, 0, 512, 128);
+
+    // Top checkered strip
+    const signCols = 16;
+    const scw = 512 / signCols;
+    for (let c = 0; c < signCols; c++) {
+      sctx.fillStyle = (c % 2 === 0) ? '#ffffff' : '#e74c3c';
+      sctx.fillRect(c * scw, 0, scw, 14);
+      sctx.fillRect(c * scw, 114, scw, 14);
+    }
+
+    // Neon START / FINISH letters
+    sctx.fillStyle = '#00f2fe';
+    sctx.font = 'bold 54px "Impact", sans-serif';
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'middle';
+    sctx.shadowColor = '#00f2fe';
+    sctx.shadowBlur = 18;
+    sctx.fillText('START  🏁  FINISH', 256, 64);
+
+    const signTex = new THREE.CanvasTexture(signCanvas);
+    const signMat = new THREE.MeshStandardMaterial({
+      map: signTex,
+      roughness: 0.3,
+      metalness: 0.2
+    });
+
+    const signGeo = new THREE.BoxGeometry(signW, signH, 4);
+    const signMesh = new THREE.Mesh(signGeo, signMat);
+    signMesh.position.set(0, archH + 6, 0);
+    signMesh.castShadow = true;
+    archGroup.add(signMesh);
+
+    // 5. Overhead Floodlights & Starting Lights (Green & Amber & Red pods)
+    const lampMat = new THREE.MeshBasicMaterial({ color: 0x2ecc71 }); // bright racing green
+    const lampHousingMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    const podW = 50;
+    const podH = 12;
+    const podGeo = new THREE.BoxGeometry(podW, podH, 8);
+    const pod = new THREE.Mesh(podGeo, lampHousingMat);
+    pod.position.set(0, archH - 12, 0);
+    archGroup.add(pod);
+
+    [-18, -6, 6, 18].forEach((lx) => {
+      const bulbGeo = new THREE.SphereGeometry(3.5, 12, 8);
+      const bulb = new THREE.Mesh(bulbGeo, lampMat);
+      bulb.position.set(lx, archH - 12, 4);
+      archGroup.add(bulb);
+    });
+
+    // Orient arch group to match track heading at sample 0
+    const angle = Math.atan2(tan.y, tan.x);
+    archGroup.position.set(pt.x, baseElev, pt.y);
+    archGroup.rotation.y = -angle + Math.PI / 2;
+
+    this.scene.add(archGroup);
+    this.trackMeshes.push(archGroup);
   }
 
   _scatterProceduralFlatProps(splineSamples, trackWidth, env) {
