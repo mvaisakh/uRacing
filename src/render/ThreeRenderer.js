@@ -258,6 +258,20 @@ export class ThreeRenderer {
     this.lastWheels.clear();
   }
 
+  clearCars(keepPreview = true) {
+    this.carMeshes.forEach((meshObj, id) => {
+      if (keepPreview && id === 'preview') return;
+      this.scene.remove(meshObj.group);
+    });
+    if (keepPreview) {
+      const prev = this.carMeshes.get('preview');
+      this.carMeshes.clear();
+      if (prev) this.carMeshes.set('preview', prev);
+    } else {
+      this.carMeshes.clear();
+    }
+  }
+
 
   _buildThemeEnvironment(envKey) {
     // Each track theme gets a unique sky and ground surface, like a miniature diorama

@@ -1,5 +1,6 @@
 /**
  * RaceManager: Tracks positions, countdown sequences, race finish triggers, and reward payouts.
+ * Supports flexible multi-car grids (Player + up to 9 AI rivals).
  */
 export class RaceManager {
   constructor({ totalLaps = 3, onRaceFinish = null } = {}) {
@@ -11,37 +12,55 @@ export class RaceManager {
     this.countdownTimer = 3.9; // 3, 2, 1, GO!
     this.isFinished = false;
     this.winner = null; // 'player' | 'ai'
+    this.playerFinishPosition = 1;
+    this.totalRacers = 2;
   }
 
-  startRace() {
+  startRace(totalRacers = 2) {
     this.state = 'COUNTDOWN';
     this.countdownTimer = 3.9;
     this.isFinished = false;
     this.winner = null;
+    this.playerFinishPosition = 1;
+    this.totalRacers = totalRacers;
   }
 
-  update(dt, playerTracker, aiTracker, gameState, trackId) {
+  update(dt, playerTracker, aiTrackers = [], gameState, trackId) {
     if (this.state === 'COUNTDOWN') {
       this.countdownTimer -= dt;
       if (this.countdownTimer <= 0) {
         this.state = 'RACING';
       }
     } else if (this.state === 'RACING') {
-      // Check finish condition
+      const trackers = Array.isArray(aiTrackers) ? aiTrackers : [aiTrackers];
+
+      // Check if player finished
       if (playerTracker.completedLaps >= this.totalLaps) {
         this.state = 'FINISHED';
-        this.winner = 'player';
-        // Reward 150 coins for victory
-        gameState.profile.coins += 150;
+        // Compute how many AI finished before player
+        let finishedBefore = 0;
+        for (const t of trackers) {
+          if (t && t.completedLaps >= this.totalLaps) {
+            finishedBefore++;
+          }
+        }
+        this.playerFinishPosition = finishedBefore + 1;
+        this.winner = this.playerFinishPosition === 1 ? 'player' : 'ai';
+
+        // Dynamic rewards based on finish position
+        let coinsEarned = 25;
+        if (this.playerFinishPosition === 1) coinsEarned = 200;
+        else if (this.playerFinishPosition === 2) coinsEarned = 100;
+        else if (this.playerFinishPosition === 3) coinsEarned = 60;
+        else if (this.playerFinishPosition <= 5) coinsEarned = 40;
+
+        gameState.profile.coins += coinsEarned;
         gameState.save();
-        if (this.onRaceFinish) this.onRaceFinish(this.winner, 150);
-      } else if (aiTracker.completedLaps >= this.totalLaps) {
-        this.state = 'FINISHED';
-        this.winner = 'ai';
-        // Consolation prize 30 coins
-        gameState.profile.coins += 30;
-        gameState.save();
-        if (this.onRaceFinish) this.onRaceFinish(this.winner, 30);
+        if (this.onRaceFinish) this.onRaceFinish(this.winner, coinsEarned, this.playerFinishPosition);
+      } else {
+        // Check if all AI cars finished or first AI finished
+        const anyAiFinishedFirst = trackers.some(t => t && t.completedLaps >= this.totalLaps);
+        // Note: Let player continue driving to finish their laps even if 1st place AI crosses line
       }
     }
   }
@@ -73,18 +92,29 @@ export class RaceManager {
 
       ctx.textAlign = 'center';
       ctx.font = 'bold 54px "Impact", sans-serif';
-      if (this.winner === 'player') {
+
+      const pos = this.playerFinishPosition;
+      const posSuffix = (pos === 1) ? '1ST' : (pos === 2 ? '2ND' : (pos === 3 ? '3RD' : `${pos}TH`));
+
+      if (pos === 1) {
         ctx.fillStyle = '#f1c40f';
-        ctx.fillText('1ST PLACE! VICTORY!', width / 2, height / 2 - 30);
+        ctx.fillText('🏆 1ST PLACE! CHAMPION!', width / 2, height / 2 - 30);
         ctx.font = 'bold 22px monospace';
         ctx.fillStyle = '#2ecc71';
-        ctx.fillText('+150 COINS EARNED', width / 2, height / 2 + 25);
+        ctx.fillText('+200 COINS EARNED', width / 2, height / 2 + 25);
+      } else if (pos <= 3) {
+        ctx.fillStyle = '#00f2fe';
+        ctx.fillText(`PODIUM FINISH! ${posSuffix} PLACE`, width / 2, height / 2 - 30);
+        ctx.font = 'bold 22px monospace';
+        ctx.fillStyle = '#f1c40f';
+        const reward = pos === 2 ? '+100' : '+60';
+        ctx.fillText(`${reward} COINS EARNED`, width / 2, height / 2 + 25);
       } else {
         ctx.fillStyle = '#e74c3c';
-        ctx.fillText('2ND PLACE - FINISHED', width / 2, height / 2 - 30);
+        ctx.fillText(`${posSuffix} PLACE - FINISHED`, width / 2, height / 2 - 30);
         ctx.font = 'bold 22px monospace';
         ctx.fillStyle = '#ecf0f1';
-        ctx.fillText('+30 COINS EARNED', width / 2, height / 2 + 25);
+        ctx.fillText('+25 CONSOLATION COINS', width / 2, height / 2 + 25);
       }
 
       ctx.font = '16px monospace';

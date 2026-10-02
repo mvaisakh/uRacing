@@ -144,6 +144,8 @@ export class TouchControls {
       if (btnId === 'menuNext' && this.callbacks.onTrackNext) this.callbacks.onTrackNext();
       if (btnId === 'menuAction' && this.callbacks.onTrackAction) this.callbacks.onTrackAction();
       if (btnId === 'menuBack' && this.callbacks.onEscape) this.callbacks.onEscape();
+      if (btnId === 'oppMinus' && this.callbacks.onOppMinus) this.callbacks.onOppMinus();
+      if (btnId === 'oppPlus' && this.callbacks.onOppPlus) this.callbacks.onOppPlus();
     }
   }
 
@@ -259,15 +261,22 @@ export class TouchControls {
     const backH = 38;
     this._registerAndDrawButton(ctx, 'menuBack', 16, 16, backW, backH, '◄ GARAGE', '#1e272e', '#00f2fe');
 
-    // Race Start Action CTA target
-    const mainY = 90;
-    const mainH = height - mainY - 60;
-    const totalW = Math.min(1080, width - 48);
-    const startX = (width - totalW) / 2;
-    const leftW = Math.floor(totalW * 0.58);
-    const rightW = totalW - leftW - 20;
-    const rightX = startX + leftW + 20;
+    // Opponents Stepper touch targets
+    const gridY = mainY + 104;
+    const itemH = 58;
+    const recordY = gridY + itemH * 2 + 16;
+    const oppY = recordY + 58;
+    const oppW = rightW - 48;
+    const oppH = 56;
+    const stepBtnSize = 42; // slightly larger touch hitbox for fingers
+    const plusX = rightX + 24 + oppW - 16 - 32;
+    const minusX = plusX - 32 - 54;
+    const btnY = oppY + (oppH - stepBtnSize) / 2;
 
+    this._registerButton('oppMinus', minusX - 5, btnY - 5, stepBtnSize + 10, stepBtnSize + 10);
+    this._registerButton('oppPlus', plusX - 5, btnY - 5, stepBtnSize + 10, stepBtnSize + 10);
+
+    // Race Start Action CTA target
     const btnW = rightW - 48;
     const btnH = 58;
     const btnX = rightX + 24;

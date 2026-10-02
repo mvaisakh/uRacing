@@ -109,14 +109,14 @@ function initGame() {
 
   let playerCar = null;
   let playerTracker = null;
-  let aiCar = null;
-  let aiController = null;
-  let aiTracker = null;
+  let aiCars = [];
+  let aiControllers = [];
+  let aiTrackers = [];
 
   const raceManager = new RaceManager({
     totalLaps: trackConfig.laps,
-    onRaceFinish: (winner, coins) => {
-      if (winner === 'player') {
+    onRaceFinish: (winner, coins, finishPos) => {
+      if (winner === 'player' || finishPos === 1) {
         sfx.playWinChime();
       }
     }
@@ -140,30 +140,63 @@ function initGame() {
   setupTrack(currentTrackKey);
 
   function startRaceSession() {
+    threeRenderer.clearCars(true);
+
     const playerSpec = VEHICLE_ROSTER[gameState.profile.selectedCar] || VEHICLE_ROSTER.detroit_bruiser;
     playerCar = new Car(playerSpec);
     playerTracker = checkpointSystem.createTracker();
 
-    const rivals = Object.keys(VEHICLE_ROSTER).filter(k => k !== gameState.profile.selectedCar);
-    const rivalKey = rivals[Math.floor(Math.random() * rivals.length)] || 'tokyo_drift_king';
-    const aiSpec = VEHICLE_ROSTER[rivalKey];
-    aiCar = new Car(aiSpec);
-    aiController = new AIController(aiCar, splineSamples, 0.45);
-    aiTracker = checkpointSystem.createTracker();
+    // Determine opponent count from settings (1 to 9, default 3)
+    const opponentCount = (gameState.profile.settings && gameState.profile.settings.opponentCount) || 3;
+
+    // Pick unique rival models from the roster
+    const allRivals = Object.keys(VEHICLE_ROSTER).filter(k => k !== gameState.profile.selectedCar);
+    // Shuffle
+    const shuffled = [...allRivals].sort(() => Math.random() - 0.5);
+
+    aiCars = [];
+    aiControllers = [];
+    aiTrackers = [];
 
     const startPt = splineSamples[0].point;
     const startTangent = splineSamples[0].tangent;
     const startNormal = splineSamples[0].normal;
     const startAngle = startTangent.angle();
 
+    // Position player on pole position (left lane, row 0)
     const p1Pos = startPt.clone().add(startNormal.clone().scale(-20));
-    const aiPos = startPt.clone().add(startNormal.clone().scale(20)).sub(startTangent.clone().scale(50));
-
     playerCar.reset(p1Pos.x, p1Pos.y, startAngle);
-    aiCar.reset(aiPos.x, aiPos.y, startAngle);
+
+    // Stagger AI opponents along standard 2-wide racing grid
+    for (let i = 0; i < opponentCount; i++) {
+      const rivalKey = shuffled[i % shuffled.length];
+      const aiSpec = VEHICLE_ROSTER[rivalKey];
+      const ai = new Car(aiSpec);
+
+      // Alternating lane offset (-1 left, +1 right)
+      const isRightLane = (i % 2 === 0);
+      const laneOffset = isRightLane ? 20 : -20;
+      const row = Math.floor((i + 1) / 2);
+      const backDist = (i === 0 ? 50 : 50 + row * 45);
+
+      const aiPos = startPt.clone()
+        .add(startNormal.clone().scale(laneOffset))
+        .sub(startTangent.clone().scale(backDist));
+
+      ai.reset(aiPos.x, aiPos.y, startAngle);
+
+      // Vary AI driving personality & lane preference slightly
+      const laneDrift = (Math.random() - 0.5) * 0.7;
+      const ctrl = new AIController(ai, splineSamples, laneDrift);
+      const trk = checkpointSystem.createTracker();
+
+      aiCars.push(ai);
+      aiControllers.push(ctrl);
+      aiTrackers.push(trk);
+    }
 
     lapTimer.start();
-    raceManager.startRace();
+    raceManager.startRace(1 + opponentCount);
     particles.clear();
     setScreen('RACE');
   }
@@ -194,6 +227,8 @@ function initGame() {
     onTrackPrev: () => trackSelectUI.prevTrack(),
     onTrackNext: () => trackSelectUI.nextTrack(),
     onTrackAction: () => trackSelectUI.selectCurrent(),
+    onOppMinus: () => trackSelectUI.changeOpponentCount(-1),
+    onOppPlus: () => trackSelectUI.changeOpponentCount(1),
     onReset: () => startRaceSession(),
     onEscape: () => setScreen('GARAGE')
   });
@@ -211,6 +246,8 @@ function initGame() {
     } else if (currentScreen === 'TRACK_SELECT') {
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') trackSelectUI.prevTrack();
       if (e.code === 'KeyD' || e.code === 'ArrowRight') trackSelectUI.nextTrack();
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') trackSelectUI.changeOpponentCount(1);
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') trackSelectUI.changeOpponentCount(-1);
       if (e.code === 'Enter' || e.code === 'Space') trackSelectUI.selectCurrent();
       if (e.code === 'Escape') setScreen('GARAGE');
     } else if (currentScreen === 'RACE') {
@@ -248,18 +285,24 @@ function initGame() {
       const playerControls = raceManager.canDrive() ? rawControls : { throttle: 0, brake: 0, steer: 0, handbrake: false };
 
       surfaceManager.evaluateSurface(playerCar);
-      surfaceManager.evaluateSurface(aiCar);
-
-      const aiDiff = rubberBanding.getDifficultyScalar(
-        playerTracker.nextGateIndex * 15,
-        aiTracker.nextGateIndex * 15,
-        splineSamples.length
-      );
-      const aiControls = raceManager.canDrive() ? aiController.update(dt, aiDiff) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
-
       playerCar.update(playerControls, dt);
       nitro.update(dt, playerCar);
-      aiCar.update(aiControls, dt);
+
+      // Multi-AI vehicle updates
+      for (let i = 0; i < aiCars.length; i++) {
+        const ai = aiCars[i];
+        const trk = aiTrackers[i];
+        const ctrl = aiControllers[i];
+
+        surfaceManager.evaluateSurface(ai);
+        const aiDiff = rubberBanding.getDifficultyScalar(
+          playerTracker.nextGateIndex * 15,
+          trk.nextGateIndex * 15,
+          splineSamples.length
+        );
+        const aiControls = raceManager.canDrive() ? ctrl.update(dt, aiDiff) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
+        ai.update(aiControls, dt);
+      }
 
       // Collisions: Barriers
       for (const barrier of trackBarriers.getBarriers()) {
@@ -267,7 +310,9 @@ function initGame() {
           sounds.playImpactSound(playerCar.forwardVelocity);
           cameraShake.addTrauma(0.25);
         }
-        CollisionSystem.resolveCarBarrier(aiCar, barrier);
+        for (const ai of aiCars) {
+          CollisionSystem.resolveCarBarrier(ai, barrier);
+        }
       }
 
       // Collisions: Props
@@ -275,12 +320,23 @@ function initGame() {
         sounds.playImpactSound(playerCar.forwardVelocity);
         cameraShake.addTrauma(0.3);
       }
-      propManager.resolveCollisions(aiCar);
+      for (const ai of aiCars) {
+        propManager.resolveCollisions(ai);
+      }
 
-      // Collisions: Car vs Car
-      if (CarVsCarCollision.resolve(playerCar, aiCar)) {
-        sounds.playImpactSound(250);
-        cameraShake.addTrauma(0.2);
+      // Collisions: Car vs Car (Player vs AI)
+      for (const ai of aiCars) {
+        if (CarVsCarCollision.resolve(playerCar, ai)) {
+          sounds.playImpactSound(250);
+          cameraShake.addTrauma(0.2);
+        }
+      }
+
+      // Collisions: AI vs AI
+      for (let i = 0; i < aiCars.length; i++) {
+        for (let j = i + 1; j < aiCars.length; j++) {
+          CarVsCarCollision.resolve(aiCars[i], aiCars[j]);
+        }
       }
 
       // Race & Laps
@@ -292,10 +348,12 @@ function initGame() {
             gameState.recordLapTime(trackConfig.id, result.bestLapTime);
           }
         });
-        checkpointSystem.updateTracker(aiTracker, aiCar.body.position);
+        for (let i = 0; i < aiCars.length; i++) {
+          checkpointSystem.updateTracker(aiTrackers[i], aiCars[i].body.position);
+        }
       }
 
-      raceManager.update(dt, playerTracker, aiTracker, gameState, trackConfig.id);
+      raceManager.update(dt, playerTracker, aiTrackers, gameState, trackConfig.id);
 
       // Audio & Camera
       sounds.updateEngine(playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerControls.throttle);
@@ -322,7 +380,6 @@ function initGame() {
       };
 
       prevPlayerWheelPos = emitTireEffects(playerCar, prevPlayerWheelPos);
-      prevAiWheelPos = emitTireEffects(aiCar, prevAiWheelPos);
       particles.update(dt);
     },
 
@@ -362,7 +419,9 @@ function initGame() {
       const shake = cameraShake.getOffset();
       
       if (playerCar) threeRenderer.updateCar('player', playerCar, loop.step);
-      if (aiCar) threeRenderer.updateCar('ai', aiCar, loop.step);
+      for (let i = 0; i < aiCars.length; i++) {
+        threeRenderer.updateCar(`ai_${i}`, aiCars[i], loop.step);
+      }
       
       // Update camera
       if (playerCar) {
@@ -401,8 +460,8 @@ function initGame() {
       // Speedometer Gauge
       speedometer.render(ctx, 20, canvas.height - 150, playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerCar.isDrifting);
 
-      // Minimap
-      minimap.render(ctx, canvas.width - 190, canvas.height - 190, playerCar, [aiCar]);
+      // Minimap with all AI opponents
+      minimap.render(ctx, canvas.width - 190, canvas.height - 190, playerCar, aiCars);
 
       // Overlay controls & touch
       ControlsOverlay.render(ctx, canvas.width, canvas.height, currentScreen);

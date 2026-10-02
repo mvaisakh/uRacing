@@ -85,9 +85,20 @@ export class TrackSelectUI {
     return this.tracksList[this.currentIndex];
   }
 
+  getOpponentCount() {
+    return (this.gameState.profile.settings && this.gameState.profile.settings.opponentCount) || 3;
+  }
+
+  changeOpponentCount(delta) {
+    const current = this.getOpponentCount();
+    const next = Math.max(1, Math.min(9, current + delta));
+    this.gameState.setOpponentCount(next);
+    return next;
+  }
+
   selectCurrent() {
     const track = this.getCurrentTrack();
-    if (this.onTrackChosen) this.onTrackChosen(track);
+    if (this.onTrackChosen) this.onTrackChosen(track, this.getOpponentCount());
   }
 
   update(dt = 0.016) {
@@ -478,36 +489,95 @@ export class TrackSelectUI {
     });
 
     // 4. Personal Best Lap Record Banner
-    const recordY = gridY + itemH * 2 + 30;
+    const recordY = gridY + itemH * 2 + 16;
     const record = this.gameState.profile.trackRecords[track.id];
 
     ctx.fillStyle = 'rgba(241, 196, 15, 0.1)';
-    this._roundRect(ctx, x + 24, recordY, w - 48, 62, 8, true, false);
+    this._roundRect(ctx, x + 24, recordY, w - 48, 48, 8, true, false);
     ctx.strokeStyle = 'rgba(241, 196, 15, 0.4)';
     ctx.lineWidth = 1.5;
-    this._roundRect(ctx, x + 24, recordY, w - 48, 62, 8, false, true);
+    this._roundRect(ctx, x + 24, recordY, w - 48, 48, 8, false, true);
 
     ctx.fillStyle = '#f1c40f';
-    ctx.font = 'bold 11px monospace';
+    ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('🏆 FASTEST RECORDED LAP TIME', x + 40, recordY + 24);
+    ctx.fillText('🏆 FASTEST RECORDED LAP TIME', x + 38, recordY + 18);
 
-    ctx.font = 'bold 22px monospace';
+    ctx.font = 'bold 18px monospace';
     const recordStr = record ? `${(record).toFixed(3)}s` : '--.---s';
-    ctx.fillText(recordStr, x + 40, recordY + 50);
+    ctx.fillText(recordStr, x + 38, recordY + 38);
 
     if (record) {
       ctx.fillStyle = '#2ecc71';
-      ctx.font = 'bold 11px monospace';
+      ctx.font = 'bold 10px monospace';
       ctx.textAlign = 'right';
-      ctx.fillText('RECORD VERIFIED', x + w - 44, recordY + 45);
+      ctx.fillText('RECORD VERIFIED', x + w - 40, recordY + 30);
     }
 
-    // 5. Large Glowing Action CTA Button
+    // 5. Opponents Selector (1 to 9 AI cars)
+    const oppY = recordY + 58;
+    const oppW = w - 48;
+    const oppH = 56;
+    const oppCount = this.getOpponentCount();
+
+    ctx.fillStyle = 'rgba(10, 15, 24, 0.6)';
+    this._roundRect(ctx, x + 24, oppY, oppW, oppH, 8, true, false);
+    ctx.strokeStyle = 'rgba(0, 242, 254, 0.35)';
+    ctx.lineWidth = 1.5;
+    this._roundRect(ctx, x + 24, oppY, oppW, oppH, 8, false, true);
+
+    // Left Label
+    ctx.fillStyle = '#8ab4f8';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('OPPONENT GRID SIZE', x + 38, oppY + 22);
+
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '10px monospace';
+    ctx.fillText('[W / S] or [↑ / ↓] TO ADJUST', x + 38, oppY + 42);
+
+    // Right Stepper Buttons & Opponent Count Meter
+    const stepBtnSize = 32;
+    const plusX = x + oppW + 24 - 16 - stepBtnSize;
+    const minusX = plusX - stepBtnSize - 54;
+    const btnY = oppY + (oppH - stepBtnSize) / 2;
+
+    // Minus Button
+    ctx.fillStyle = oppCount > 1 ? 'rgba(231, 76, 60, 0.25)' : 'rgba(255, 255, 255, 0.05)';
+    this._roundRect(ctx, minusX, btnY, stepBtnSize, stepBtnSize, 6, true, false);
+    ctx.strokeStyle = oppCount > 1 ? '#e74c3c' : 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5;
+    this._roundRect(ctx, minusX, btnY, stepBtnSize, stepBtnSize, 6, false, true);
+
+    ctx.fillStyle = oppCount > 1 ? '#ffffff' : '#636e72';
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('-', minusX + stepBtnSize / 2, btnY + stepBtnSize / 2);
+
+    // Number Count Badge
+    ctx.fillStyle = '#00f2fe';
+    ctx.font = 'bold 22px "Impact", sans-serif';
+    ctx.fillText(`${oppCount} AI`, minusX + stepBtnSize + 27, btnY + stepBtnSize / 2);
+
+    // Plus Button
+    ctx.fillStyle = oppCount < 9 ? 'rgba(46, 204, 113, 0.25)' : 'rgba(255, 255, 255, 0.05)';
+    this._roundRect(ctx, plusX, btnY, stepBtnSize, stepBtnSize, 6, true, false);
+    ctx.strokeStyle = oppCount < 9 ? '#2ecc71' : 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5;
+    this._roundRect(ctx, plusX, btnY, stepBtnSize, stepBtnSize, 6, false, true);
+
+    ctx.fillStyle = oppCount < 9 ? '#ffffff' : '#636e72';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText('+', plusX + stepBtnSize / 2, btnY + stepBtnSize / 2);
+
+    ctx.textBaseline = 'alphabetic'; // reset
+
+    // 6. Large Glowing Action CTA Button
     const btnW = w - 48;
-    const btnH = 54;
+    const btnH = 52;
     const btnX = x + 24;
-    const btnY = h - 74 + y;
+    const btnY = h - 68 + y;
 
     const pulse = Math.sin(this.animTime * 4) * 0.2 + 0.8;
     ctx.fillStyle = '#2ecc71';

@@ -19,9 +19,18 @@ export class GameState {
       },
       settings: {
         audioVolume: 0.8,
-        particlesEnabled: true
+        particlesEnabled: true,
+        opponentCount: 3 // Default 3 opponents, range 1 to 9
       }
     };
+  }
+
+  setOpponentCount(count) {
+    const clamped = Math.max(1, Math.min(9, Math.round(count)));
+    if (!this.profile.settings) this.profile.settings = {};
+    this.profile.settings.opponentCount = clamped;
+    this.save();
+    return clamped;
   }
 
   _loadProfile() {
