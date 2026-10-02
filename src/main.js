@@ -90,6 +90,7 @@ function initGame() {
   function setScreen(newScreen) {
     const prev = currentScreen;
     currentScreen = newScreen;
+    touchControls.setMode(newScreen);
 
     if (newScreen === 'GARAGE' || newScreen === 'TRACK_SELECT') {
       if (!sounds.isBgmPlaying) {
@@ -180,6 +181,22 @@ function initGame() {
       startRaceSession();
     }
   );
+
+  touchControls.setCallbacks({
+    onGaragePrev: () => garageUI.prevCar(),
+    onGarageNext: () => garageUI.nextCar(),
+    onGarageAction: () => {
+      const res = garageUI.buyOrSelect();
+      if (res.action === 'selected') {
+        setScreen('TRACK_SELECT');
+      }
+    },
+    onTrackPrev: () => trackSelectUI.prevTrack(),
+    onTrackNext: () => trackSelectUI.nextTrack(),
+    onTrackAction: () => trackSelectUI.selectCurrent(),
+    onReset: () => startRaceSession(),
+    onEscape: () => setScreen('GARAGE')
+  });
 
   window.addEventListener('keydown', (e) => {
     if (currentScreen === 'GARAGE') {
@@ -327,6 +344,7 @@ function initGame() {
         threeRenderer.setGarageMode(true, garageUI.previewCar);
         threeRenderer.render();
         garageUI.render(ctx, canvas.width, canvas.height);
+        touchControls.render(ctx, canvas.width, canvas.height);
         diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
         return;
       }
@@ -335,6 +353,7 @@ function initGame() {
 
       if (currentScreen === 'TRACK_SELECT') {
         trackSelectUI.render(ctx, canvas.width, canvas.height);
+        touchControls.render(ctx, canvas.width, canvas.height);
         diagnostics.render(ctx, canvas.width, canvas.height, runtimeData);
         return;
       }

@@ -5,6 +5,10 @@ export class ControlsOverlay {
   static render(ctx, width, height, currentMode = 'RACE') {
     if (currentMode !== 'RACE') return;
 
+    // Do not clutter mobile touch displays with desktop keyboard keybinding hints
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouch) return;
+
     ctx.save();
     ctx.textAlign = 'right';
     ctx.font = '12px monospace';

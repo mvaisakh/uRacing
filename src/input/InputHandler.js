@@ -54,6 +54,10 @@ export class InputHandler {
     return !!this.keys.get(code);
   }
 
+  setVirtualKey(code, isPressed) {
+    this.keys.set(code, isPressed);
+  }
+
   isActionActive(actionName) {
     const boundCodes = this.bindings[actionName];
     if (!boundCodes) return false;
