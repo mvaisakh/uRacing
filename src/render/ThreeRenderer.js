@@ -53,17 +53,142 @@ export class ThreeRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
+
+  _buildThemeEnvironment(envKey) {
+    // Each track theme gets a unique sky and ground surface, like a miniature diorama
+    const themes = {
+      kitchen: {
+        sky: 0xFFF8E7,        // warm cream (kitchen lighting)
+        ground: 0xC8960C,     // honey oak wood grain colour
+        groundAlt: 0xB8820A,  // darker oak stripe (wood grain stripes)
+        fogColor: 0xFFF8E7,
+        fogNear: 800, fogFar: 3000,
+        stripeTile: 80        // wood plank width
+      },
+      workshop: {
+        sky: 0xD0D8E0,        // cold fluorescent workshop light
+        ground: 0x6B4C2A,     // dark stained workbench wood
+        groundAlt: 0x5A3E22,
+        fogColor: 0xCCD4DC,
+        fogNear: 600, fogFar: 2500,
+        stripeTile: 100
+      },
+      garden: {
+        sky: 0x7ECBE0,        // outdoor blue sky
+        ground: 0x4A7C2F,     // grass green
+        groundAlt: 0x3D6827,  // darker grass stripe
+        fogColor: 0xA0D8EF,
+        fogNear: 1000, fogFar: 4000,
+        stripeTile: 120
+      }
+    };
+    const t = themes[envKey] || themes.kitchen;
+
+    // Sky
+    this.scene.background = new THREE.Color(t.sky);
+    this.scene.fog = new THREE.Fog(t.fogColor, t.fogNear, t.fogFar);
+
+    // Ground plane (surface of table/bench/garden)
+    const gGeo = new THREE.PlaneGeometry(8000, 8000);
+    const gMat = new THREE.MeshLambertMaterial({ color: t.ground });
+    const gMesh = new THREE.Mesh(gGeo, gMat);
+    gMesh.rotation.x = -Math.PI / 2;
+    gMesh.position.y = -3;
+    this.scene.add(gMesh);
+    this.trackMeshes.push(gMesh);
+
+    // Decorative surface stripes (wood planks / grass rows)
+    const stripeCount = Math.floor(8000 / t.stripeTile);
+    const stripeMat = new THREE.MeshLambertMaterial({ color: t.groundAlt });
+    for (let i = 0; i < stripeCount; i += 2) {
+      const sGeo = new THREE.PlaneGeometry(8000, t.stripeTile * 0.9);
+      const s = new THREE.Mesh(sGeo, stripeMat);
+      s.rotation.x = -Math.PI / 2;
+      s.position.set(0, -2.9, -4000 + i * t.stripeTile + t.stripeTile / 2);
+      this.scene.add(s);
+      this.trackMeshes.push(s);
+    }
+
+    // Decor props per theme
+    if (envKey === 'kitchen') {
+      this._addKitchenDecor();
+    } else if (envKey === 'workshop') {
+      this._addWorkshopDecor();
+    } else if (envKey === 'garden') {
+      this._addGardenDecor();
+    }
+  }
+
+  _addKitchenDecor() {
+    // Salt & pepper shakers (simple cylinders as giant landmarks)
+    const shakerMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+    const lidMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    [[-1200, -900], [1500, 700], [-800, 1100]].forEach(([x, z]) => {
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 200, 16), shakerMat);
+      body.position.set(x, 100, z);
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 20, 16), lidMat);
+      lid.position.set(x, 210, z);
+      this.scene.add(body); this.scene.add(lid);
+      this.trackMeshes.push(body, lid);
+    });
+    // A large cutting board leaning in background
+    const board = new THREE.Mesh(new THREE.BoxGeometry(600, 10, 400), new THREE.MeshLambertMaterial({ color: 0xA0522D }));
+    board.position.set(1800, 200, -1200);
+    board.rotation.z = 0.3;
+    this.scene.add(board);
+    this.trackMeshes.push(board);
+  }
+
+  _addWorkshopDecor() {
+    // Nuts and bolts (torus + cylinder stacks)
+    const metalMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
+    [[900, -800], [-1300, 600], [200, 1400]].forEach(([x, z]) => {
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 100, 6), metalMat);
+      bolt.position.set(x, 50, z);
+      const nut = new THREE.Mesh(new THREE.TorusGeometry(35, 12, 6, 6), metalMat);
+      nut.rotation.x = Math.PI / 2;
+      nut.position.set(x, 110, z);
+      this.scene.add(bolt); this.scene.add(nut);
+      this.trackMeshes.push(bolt, nut);
+    });
+    // Tape roll lying on its side
+    const tape = new THREE.Mesh(new THREE.CylinderGeometry(80, 80, 40, 32), new THREE.MeshLambertMaterial({ color: 0xffcc00 }));
+    tape.rotation.z = Math.PI / 2;
+    tape.position.set(-1600, 40, -800);
+    this.scene.add(tape);
+    this.trackMeshes.push(tape);
+  }
+
+  _addGardenDecor() {
+    // Mushrooms (cylinder + sphere)
+    const stemMat = new THREE.MeshLambertMaterial({ color: 0xf5deb3 });
+    const capMat = new THREE.MeshLambertMaterial({ color: 0xcc2200 });
+    [[-1100, -700], [1300, 800], [-500, 1300], [1800, -400]].forEach(([x, z]) => {
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(18, 22, 90, 10), stemMat);
+      stem.position.set(x, 45, z);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(45, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), capMat);
+      cap.position.set(x, 100, z);
+      this.scene.add(stem); this.scene.add(cap);
+      this.trackMeshes.push(stem, cap);
+    });
+    // Pebble clusters (flattened spheres)
+    const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x999988 });
+    for (let i = 0; i < 20; i++) {
+      const r = 15 + Math.random() * 20;
+      const p = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 4), pebbleMat);
+      p.scale.y = 0.5;
+      p.position.set((Math.random() - 0.5) * 4000, 0, (Math.random() - 0.5) * 4000);
+      this.scene.add(p);
+      this.trackMeshes.push(p);
+    }
+  }
+
   buildEnvironment(trackConfig, splineSamples, trackBarriers, propManager) {
     this.trackMeshes.forEach(m => this.scene.remove(m));
     this.trackMeshes = [];
 
-    const groundGeo = new THREE.PlaneGeometry(10000, 10000);
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -2;
-    this.scene.add(ground);
-    this.trackMeshes.push(ground);
+    // Themed toy-world environment
+    this._buildThemeEnvironment(trackConfig.environment || 'kitchen');
 
     if (!splineSamples || splineSamples.length === 0) return;
 
