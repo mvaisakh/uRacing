@@ -38,9 +38,11 @@ export class ThreeRenderer {
     this.trackMeshes = [];
     this.garageMode = false;
 
-    this.trackCurve = null;
+    this.trackSurface = null;   // the actual orange track mesh for raycasting
+    this.groundMesh   = null;   // fallback flat ground for out-of-track raycasts
+    this.trackCurve   = null;
     this.cameraLookAt = new THREE.Vector3();
-    this.cameraAngle = 0;
+    this.cameraAngle  = 0;
   }
 
   resize(w, h) {
@@ -95,6 +97,7 @@ export class ThreeRenderer {
     gMesh.rotation.x = -Math.PI / 2;
     gMesh.position.y = -3;
     this.scene.add(gMesh);
+    this.groundMesh = gMesh; // keep a dedicated ref for fallback raycast
     this.trackMeshes.push(gMesh);
 
     // Decorative surface stripes (wood planks / grass rows)
@@ -224,6 +227,7 @@ export class ThreeRenderer {
     const trackGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
     const trackMat = new THREE.MeshLambertMaterial({ color: 0xff6600 });
     const trackMesh = new THREE.Mesh(trackGeom, trackMat);
+    this.trackSurface = trackMesh; // dedicated ref used by raycast in updateCar
     this.scene.add(trackMesh);
     this.trackMeshes.push(trackMesh);
 
@@ -391,20 +395,25 @@ export class ThreeRenderer {
     
     const group = meshObj.group;
     
-    // Calculate elevation based on track curve raycast
-    let elevation = 0;
-    if (this.trackCurve && this.trackMeshes.length > 1) {
-        const raycaster = new THREE.Raycaster(
-            new THREE.Vector3(car.body.position.x, 500, car.body.position.y),
-            new THREE.Vector3(0, -1, 0)
-        );
-        const intersects = raycaster.intersectObject(this.trackMeshes[1]);
-        if (intersects.length > 0) {
-            elevation = intersects[0].point.y;
+    // Raycast downward to find the track surface (or ground as fallback).
+    // Previously used trackMeshes[1] which was a stripe tile after the environment
+    // refactor — now using a dedicated this.trackSurface reference.
+    let elevation = 3; // default: track base height
+    const origin = new THREE.Vector3(car.body.position.x, 500, car.body.position.y);
+    const down   = new THREE.Vector3(0, -1, 0);
+    const raycaster = new THREE.Raycaster(origin, down);
+    
+    if (this.trackSurface) {
+        const hits = raycaster.intersectObject(this.trackSurface);
+        if (hits.length > 0) {
+            elevation = hits[0].point.y;
+        } else if (this.groundMesh) {
+            // car is off the track — find the flat ground instead
+            const gHits = raycaster.intersectObject(this.groundMesh);
+            if (gHits.length > 0) elevation = gHits[0].point.y;
         }
     }
     
-    // Lift car slightly to perfectly rest wheels on track
     group.position.set(car.body.position.x, elevation, car.body.position.y);
     group.rotation.y = -car.body.angle; 
   }
