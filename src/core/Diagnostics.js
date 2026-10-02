@@ -51,9 +51,9 @@ export class EngineDiagnostics {
       }
     };
 
-    // 1. Validate vehicle roster
+    // 1. Validate vehicle roster (expanded 16-car multi-class roster)
     const carKeys = Object.keys(VEHICLE_ROSTER);
-    assert(carKeys.length === 5, `Expected 5 vehicles in roster, got ${carKeys.length}`);
+    assert(carKeys.length >= 15, `Expected >= 15 vehicles in roster, got ${carKeys.length}`);
     for (const key of carKeys) {
       const car = VEHICLE_ROSTER[key];
       assert(!!car.name, `Car ${key} must have a name`);

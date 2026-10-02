@@ -89,6 +89,10 @@ export class Vec2 {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  dist(v) {
+    return this.distanceTo(v);
+  }
+
   static fromAngle(angle, length = 1) {
     return new Vec2(Math.cos(angle) * length, Math.sin(angle) * length);
   }

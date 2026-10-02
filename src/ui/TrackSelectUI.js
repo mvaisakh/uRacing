@@ -60,7 +60,7 @@ export class TrackSelectUI {
       let lengthSum = 0;
       for (let i = 0; i < samples.length; i++) {
         const next = (i + 1) % samples.length;
-        lengthSum += samples[i].point.dist(samples[next].point);
+        lengthSum += samples[i].point.distanceTo(samples[next].point);
       }
       const circuitLengthMeters = Math.round(lengthSum * 0.05);
 
