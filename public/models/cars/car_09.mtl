@@ -1,0 +1,4 @@
+newmtl CAR_06
+Kd 1.0 1.0 1.0
+map_Kd ../textures/Car_09.png
+illum 1

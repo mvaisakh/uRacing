@@ -1,0 +1,8 @@
+*.zip
+*.rar
+*.py
+*.patch
+test_stat.js
+patch.js
+public/models/extra/
+public/models/low_poly_cars_set/
