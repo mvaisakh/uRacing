@@ -48,11 +48,11 @@ export const TRACK_ROSTER = {
     ]
   },
 
-  desk_rally: {
-    id: 'desk_rally',
-    name: 'Office Desk Sprint',
-    environment: 'office',
-    bgColor: '#CDBA96', // Light desk wood
+  garden_path: {
+    id: 'garden_path',
+    name: 'Garden Path Sprint',
+    environment: 'garden',
+    bgColor: '#4A7C2F',
     laps: 3,
     trackWidth: 130,
     startPosition: { x: -300, y: -400 },
