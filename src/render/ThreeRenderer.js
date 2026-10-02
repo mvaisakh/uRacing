@@ -1,7 +1,11 @@
 import * as THREE from 'three';
+import { CAR_MODELS_DATA } from '../vehicles/CarModelsData.js';
 
 export class ThreeRenderer {
   constructor(canvasWidth, canvasHeight) {
+    this.textureLoader = new THREE.TextureLoader();
+    this.loadedTextures = new Map();
+    this.modelGeometries = new Map();
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(canvasWidth, canvasHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -82,6 +86,22 @@ export class ThreeRenderer {
         fogColor: 0xA0D8EF,
         fogNear: 1000, fogFar: 4000,
         stripeTile: 120
+      },
+      playroom: {
+        sky: 0x93b7be,        // soft nursery blue
+        ground: 0x3d5a80,     // patterned carpet floor
+        groundAlt: 0x293241,  // carpet weave pattern
+        fogColor: 0x93b7be,
+        fogNear: 700, fogFar: 2800,
+        stripeTile: 120
+      },
+      office: {
+        sky: 0xe0e1dd,        // clean indoor studio light
+        ground: 0x415a77,     // cutting mat / drafting board
+        groundAlt: 0x1b263b,  // drafting grid lines
+        fogColor: 0xe0e1dd,
+        fogNear: 800, fogFar: 3200,
+        stripeTile: 60
       }
     };
     const t = themes[envKey] || themes.kitchen;
@@ -100,7 +120,7 @@ export class ThreeRenderer {
     this.groundMesh = gMesh; // keep a dedicated ref for fallback raycast
     this.trackMeshes.push(gMesh);
 
-    // Decorative surface stripes (wood planks / grass rows)
+    // Decorative surface stripes (wood planks / grid / tiles)
     const stripeCount = Math.floor(8000 / t.stripeTile);
     const stripeMat = new THREE.MeshLambertMaterial({ color: t.groundAlt });
     for (let i = 0; i < stripeCount; i += 2) {
@@ -119,71 +139,167 @@ export class ThreeRenderer {
       this._addWorkshopDecor();
     } else if (envKey === 'garden') {
       this._addGardenDecor();
+    } else if (envKey === 'playroom') {
+      this._addPlayroomDecor();
+    } else {
+      this._addOfficeDecor();
     }
   }
 
   _addKitchenDecor() {
-    // Salt & pepper shakers (simple cylinders as giant landmarks)
-    const shakerMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
-    const lidMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
-    [[-1200, -900], [1500, 700], [-800, 1100]].forEach(([x, z]) => {
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 200, 16), shakerMat);
-      body.position.set(x, 100, z);
-      const lid = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 20, 16), lidMat);
-      lid.position.set(x, 210, z);
-      this.scene.add(body); this.scene.add(lid);
-      this.trackMeshes.push(body, lid);
+    // Ceramic Coffee Mugs with handles
+    const mugMat = new THREE.MeshLambertMaterial({ color: 0xfdfbf7 });
+    const coffeeMat = new THREE.MeshLambertMaterial({ color: 0x3d2314 });
+    [[-900, -800], [1300, 600]].forEach(([x, z]) => {
+      const mug = new THREE.Mesh(new THREE.CylinderGeometry(55, 50, 110, 20), mugMat);
+      mug.position.set(x, 55, z);
+      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(51, 51, 6, 20), coffeeMat);
+      liquid.position.set(x, 102, z);
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(32, 8, 8, 16), mugMat);
+      handle.position.set(x + 55, 55, z);
+      handle.rotation.y = Math.PI / 2;
+      this.scene.add(mug); this.scene.add(liquid); this.scene.add(handle);
+      this.trackMeshes.push(mug, liquid, handle);
     });
-    // A large cutting board leaning in background
-    const board = new THREE.Mesh(new THREE.BoxGeometry(600, 10, 400), new THREE.MeshLambertMaterial({ color: 0xA0522D }));
-    board.position.set(1800, 200, -1200);
-    board.rotation.z = 0.3;
+
+    // Soda cans with aluminum pull tabs
+    const canMat = new THREE.MeshLambertMaterial({ color: 0xc0392b });
+    const silverMat = new THREE.MeshLambertMaterial({ color: 0xdcdde1 });
+    [[-1300, 400], [700, -950]].forEach(([x, z]) => {
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(38, 38, 125, 20), canMat);
+      can.position.set(x, 62.5, z);
+      const topRim = new THREE.Mesh(new THREE.CylinderGeometry(36, 38, 10, 20), silverMat);
+      topRim.position.set(x, 120, z);
+      this.scene.add(can); this.scene.add(topRim);
+      this.trackMeshes.push(can, topRim);
+    });
+
+    // Kitchen Cutting Board
+    const board = new THREE.Mesh(new THREE.BoxGeometry(650, 18, 420), new THREE.MeshLambertMaterial({ color: 0xc49a6c }));
+    board.position.set(1600, 9, -1100);
     this.scene.add(board);
     this.trackMeshes.push(board);
   }
 
   _addWorkshopDecor() {
-    // Nuts and bolts (torus + cylinder stacks)
-    const metalMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
+    // Metal nuts and bolts
+    const metalMat = new THREE.MeshLambertMaterial({ color: 0x8a95a5 });
     [[900, -800], [-1300, 600], [200, 1400]].forEach(([x, z]) => {
-      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 100, 6), metalMat);
-      bolt.position.set(x, 50, z);
-      const nut = new THREE.Mesh(new THREE.TorusGeometry(35, 12, 6, 6), metalMat);
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(22, 22, 110, 6), metalMat);
+      bolt.position.set(x, 55, z);
+      const nut = new THREE.Mesh(new THREE.TorusGeometry(38, 14, 6, 6), metalMat);
       nut.rotation.x = Math.PI / 2;
-      nut.position.set(x, 110, z);
+      nut.position.set(x, 115, z);
       this.scene.add(bolt); this.scene.add(nut);
       this.trackMeshes.push(bolt, nut);
     });
-    // Tape roll lying on its side
-    const tape = new THREE.Mesh(new THREE.CylinderGeometry(80, 80, 40, 32), new THREE.MeshLambertMaterial({ color: 0xffcc00 }));
-    tape.rotation.z = Math.PI / 2;
-    tape.position.set(-1600, 40, -800);
-    this.scene.add(tape);
-    this.trackMeshes.push(tape);
+    // Paint can with handle
+    const paintMat = new THREE.MeshLambertMaterial({ color: 0xe67e22 });
+    const paint = new THREE.Mesh(new THREE.CylinderGeometry(70, 70, 120, 24), paintMat);
+    paint.position.set(-1500, 60, -700);
+    this.scene.add(paint);
+    this.trackMeshes.push(paint);
   }
 
   _addGardenDecor() {
-    // Mushrooms (cylinder + sphere)
-    const stemMat = new THREE.MeshLambertMaterial({ color: 0xf5deb3 });
-    const capMat = new THREE.MeshLambertMaterial({ color: 0xcc2200 });
-    [[-1100, -700], [1300, 800], [-500, 1300], [1800, -400]].forEach(([x, z]) => {
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(18, 22, 90, 10), stemMat);
-      stem.position.set(x, 45, z);
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(45, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), capMat);
-      cap.position.set(x, 100, z);
-      this.scene.add(stem); this.scene.add(cap);
-      this.trackMeshes.push(stem, cap);
+    // Terracotta Flower Pots
+    const terraMat = new THREE.MeshLambertMaterial({ color: 0xc05621 });
+    const soilMat = new THREE.MeshLambertMaterial({ color: 0x271c16 });
+    [[-1100, -700], [1300, 800], [-600, 1300]].forEach(([x, z]) => {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(60, 42, 100, 18), terraMat);
+      pot.position.set(x, 50, z);
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(56, 56, 10, 18), soilMat);
+      soil.position.set(x, 96, z);
+      this.scene.add(pot); this.scene.add(soil);
+      this.trackMeshes.push(pot, soil);
     });
-    // Pebble clusters (flattened spheres)
-    const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x999988 });
-    for (let i = 0; i < 20; i++) {
-      const r = 15 + Math.random() * 20;
-      const p = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 4), pebbleMat);
-      p.scale.y = 0.5;
-      p.position.set((Math.random() - 0.5) * 4000, 0, (Math.random() - 0.5) * 4000);
+    // River Pebbles
+    const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x718096 });
+    for (let i = 0; i < 24; i++) {
+      const r = 20 + (i % 5) * 6;
+      const p = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), pebbleMat);
+      p.scale.set(1.4, 0.45, 1.1);
+      const angle = (i / 24) * Math.PI * 2;
+      p.position.set(Math.cos(angle) * 1600 + (i % 3) * 100, 8, Math.sin(angle) * 1600 + (i % 4) * 80);
       this.scene.add(p);
       this.trackMeshes.push(p);
     }
+  }
+
+  _addPlayroomDecor() {
+    // Wooden Toy Building Blocks (cubes & pyramids)
+    const colors = [0xe53e3e, 0x3182ce, 0xd69e2e, 0x38a169];
+    [[-1000, -800], [-850, -800], [1200, 700], [1350, 700], [500, -1300]].forEach(([x, z], idx) => {
+      const mat = new THREE.MeshLambertMaterial({ color: colors[idx % colors.length] });
+      const block = new THREE.Mesh(new THREE.BoxGeometry(90, 90, 90), mat);
+      block.position.set(x, 45, z);
+      this.scene.add(block);
+      this.trackMeshes.push(block);
+    });
+  }
+
+  _addOfficeDecor() {
+    // Pencil cup with colored pencils
+    const cupMat = new THREE.MeshLambertMaterial({ color: 0x2d3748 });
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 110, 20), cupMat);
+    cup.position.set(-1100, 55, -900);
+    this.scene.add(cup);
+    this.trackMeshes.push(cup);
+
+    // Sticky Note Pad stacks
+    const padMat = new THREE.MeshLambertMaterial({ color: 0xf6e05e });
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(110, 35, 110), padMat);
+    pad.position.set(1200, 17.5, 600);
+    this.scene.add(pad);
+    this.trackMeshes.push(pad);
+  }
+
+  _buildDetailedProp(prop) {
+    const group = new THREE.Group();
+    const mainMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(prop.color) });
+    const silverMat = new THREE.MeshLambertMaterial({ color: 0xdcdde1 });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x2f3640 });
+
+    if (prop.type === 'cylinder') {
+      const r = prop.radius;
+      const h = prop.height3D;
+      
+      // Main can/bottle body
+      const bodyGeo = new THREE.CylinderGeometry(r, r, h, 20);
+      const body = new THREE.Mesh(bodyGeo, mainMat);
+      body.position.y = h / 2;
+      group.add(body);
+
+      // Top silver rim / cap
+      const rimGeo = new THREE.CylinderGeometry(r * 0.94, r, h * 0.08, 20);
+      const rim = new THREE.Mesh(rimGeo, silverMat);
+      rim.position.y = h * 0.96;
+      group.add(rim);
+
+      // Bottom rim
+      const botRim = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.92, h * 0.06, 20), silverMat);
+      botRim.position.y = h * 0.03;
+      group.add(botRim);
+    } else {
+      // Box prop: e.g. motor oil, battery pack, sponge, paper ream
+      const w = prop.width;
+      const d = prop.height; // depth
+      const h = prop.height3D;
+
+      const bodyGeo = new THREE.BoxGeometry(w, h, d);
+      const body = new THREE.Mesh(bodyGeo, mainMat);
+      body.position.y = h / 2;
+      group.add(body);
+
+      // Top lid / label accent
+      const lidGeo = new THREE.BoxGeometry(w * 0.96, h * 0.12, d * 0.96);
+      const lid = new THREE.Mesh(lidGeo, darkMat);
+      lid.position.y = h * 0.94;
+      group.add(lid);
+    }
+
+    group.position.set(prop.position.x, 0, prop.position.y);
+    return group;
   }
 
   buildEnvironment(trackConfig, splineSamples, trackBarriers, propManager) {
@@ -200,10 +316,7 @@ export class ThreeRenderer {
     const totalLen = splineSamples.length;
 
     // Trackmania-style elevation profile — smooth sin() easing between sections.
-    // Each entry: [startPct, endPct, startY, peakY]
-    // Between entries, the track blends smoothly.
     const elevFn = (p) => {
-        // smooth ease helper (0→1 sin curve)
         const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
 
         if (p < 0.10)                    return trackBaseY;                        // flat start straight
@@ -232,7 +345,6 @@ export class ThreeRenderer {
     const trackWidth = trackConfig.trackWidth || 140;
     
     // ExtrudeGeometry maps Shape X to World UP (Y), and Shape Y to World SIDE.
-    // So X = thickness, Y = width across the track.
     const thickness = 4;
     const shape = new THREE.Shape();
     shape.moveTo(0, -trackWidth/2);
@@ -270,21 +382,12 @@ export class ThreeRenderer {
     this.scene.add(rightMesh);
     this.trackMeshes.push(leftMesh, rightMesh);
 
+    // Detailed miniature tabletop props (soda cans with pull-tabs, coffee mugs, oil containers)
     if (propManager) {
         for (const prop of propManager.props) {
-            const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(prop.color) });
-            let mesh;
-            if (prop.type === 'cylinder') {
-                const geom = new THREE.CylinderGeometry(prop.radius, prop.radius, prop.height3D, 16);
-                mesh = new THREE.Mesh(geom, mat);
-                mesh.position.set(prop.position.x, prop.height3D / 2, prop.position.y);
-            } else {
-                const geom = new THREE.BoxGeometry(prop.width, prop.height3D, prop.height);
-                mesh = new THREE.Mesh(geom, mat);
-                mesh.position.set(prop.position.x, prop.height3D / 2, prop.position.y);
-            }
-            this.scene.add(mesh);
-            this.trackMeshes.push(mesh);
+            const propMeshGroup = this._buildDetailedProp(prop);
+            this.scene.add(propMeshGroup);
+            this.trackMeshes.push(propMeshGroup);
         }
     }
   }
@@ -487,48 +590,88 @@ export class ThreeRenderer {
     }
   }
 
+  _getModelGeometry(modelId) {
+    if (this.modelGeometries.has(modelId)) {
+      return this.modelGeometries.get(modelId);
+    }
+    const modelData = CAR_MODELS_DATA[modelId];
+    if (!modelData) return null;
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(modelData.mesh.positions, 3));
+    geom.setAttribute('uv', new THREE.Float32BufferAttribute(modelData.mesh.uvs, 2));
+    if (modelData.mesh.normals && modelData.mesh.normals.length > 0) {
+      geom.setAttribute('normal', new THREE.Float32BufferAttribute(modelData.mesh.normals, 3));
+    } else {
+      geom.computeVertexNormals();
+    }
+    this.modelGeometries.set(modelId, geom);
+    return geom;
+  }
+
+  _getModelTexture(modelId) {
+    if (this.loadedTextures.has(modelId)) {
+      return this.loadedTextures.get(modelId);
+    }
+    const modelData = CAR_MODELS_DATA[modelId];
+    if (!modelData || !modelData.texture) return null;
+
+    const tex = this.textureLoader.load(modelData.texture);
+    tex.flipY = true;
+    this.loadedTextures.set(modelId, tex);
+    return tex;
+  }
+
   createCar(id, car) {
     if (this.carMeshes.has(id)) {
         this.scene.remove(this.carMeshes.get(id).group);
     }
 
     const group = new THREE.Group();
-    
-    // Matte / Flat-shaded Lambert materials for authentic low-poly toy look matching reference images
-    const bodyMat = new THREE.MeshLambertMaterial({
-        color: new THREE.Color(car.spec.color)
-    });
-    const darkTrimMat = new THREE.MeshLambertMaterial({
-        color: 0x24272c // Charcoal bumper and side skirt
-    });
-    const glassMat = new THREE.MeshLambertMaterial({
-        color: 0x3d4b58 // Tinted low-poly glass
-    });
-    const tireMat = new THREE.MeshLambertMaterial({
-        color: 0x181a1d
-    });
-    const rimMat = new THREE.MeshLambertMaterial({
-        color: 0xc8ced6 // Silver hubcaps
-    });
-    const lightMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff // White headlights
-    });
-    const amberMat = new THREE.MeshBasicMaterial({
-        color: 0xff9900 // Amber corner turn signals
-    });
-    const tailMat = new THREE.MeshBasicMaterial({
-        color: 0xd62828 // Red taillights
-    });
+    const modelId = car.spec.modelId;
 
-    const stats = car.spec.stats;
-    const speedNorm  = stats ? Math.min((stats.topSpeed  - 380) / 140, 1) : 0.5;
-    const weightNorm = stats ? Math.min((stats.weight    - 0.9)  / 0.9, 1) : 0.5;
-    const W = 15 + weightNorm * 7;
-    const L = 29 + speedNorm  * 13;
-    const H = 7.5 + weightNorm * 5;
+    if (modelId && CAR_MODELS_DATA[modelId]) {
+      // Load and render low poly car mesh extracted from game archives
+      const geom = this._getModelGeometry(modelId);
+      const texture = this._getModelTexture(modelId);
+      
+      const mat = new THREE.MeshLambertMaterial({
+        map: texture,
+        color: new THREE.Color(0xffffff)
+      });
+      const carMesh = new THREE.Mesh(geom, mat);
+      carMesh.castShadow = true;
+      carMesh.receiveShadow = true;
+      group.add(carMesh);
 
-    const style = car.spec.bodyStyle || 'sedan';
-    this._buildCarBody(group, style, L, W, H, bodyMat, darkTrimMat, glassMat, tireMat, rimMat, lightMat, amberMat, tailMat);
+      // Add miniature toy underbody shadow plate
+      const shadowGeo = new THREE.PlaneGeometry(36, 17);
+      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 });
+      const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = 0.5;
+      group.add(shadow);
+    } else {
+      // Fallback procedural detailed body
+      const bodyMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(car.spec.color) });
+      const darkTrimMat = new THREE.MeshLambertMaterial({ color: 0x24272c });
+      const glassMat = new THREE.MeshLambertMaterial({ color: 0x3d4b58 });
+      const tireMat = new THREE.MeshLambertMaterial({ color: 0x181a1d });
+      const rimMat = new THREE.MeshLambertMaterial({ color: 0xc8ced6 });
+      const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const amberMat = new THREE.MeshBasicMaterial({ color: 0xff9900 });
+      const tailMat = new THREE.MeshBasicMaterial({ color: 0xd62828 });
+
+      const stats = car.spec.stats;
+      const speedNorm  = stats ? Math.min((stats.topSpeed  - 380) / 140, 1) : 0.5;
+      const weightNorm = stats ? Math.min((stats.weight    - 0.9)  / 0.9, 1) : 0.5;
+      const W = 15 + weightNorm * 7;
+      const L = 29 + speedNorm  * 13;
+      const H = 7.5 + weightNorm * 5;
+
+      const style = car.spec.bodyStyle || 'sedan';
+      this._buildCarBody(group, style, L, W, H, bodyMat, darkTrimMat, glassMat, tireMat, rimMat, lightMat, amberMat, tailMat);
+    }
 
     this.scene.add(group);
     this.carMeshes.set(id, { group, velY: 0 });
