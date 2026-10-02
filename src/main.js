@@ -324,8 +324,8 @@ function initGame() {
       // Apply shake to Three.js camera (if needed, but skip for now to ensure stability)
       const shake = cameraShake.getOffset();
       
-      if (playerCar) threeRenderer.updateCar('player', playerCar);
-      if (aiCar) threeRenderer.updateCar('ai', aiCar);
+      if (playerCar) threeRenderer.updateCar('player', playerCar, loop.step);
+      if (aiCar) threeRenderer.updateCar('ai', aiCar, loop.step);
       
       // Update camera
       if (playerCar) {

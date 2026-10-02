@@ -383,10 +383,10 @@ export class ThreeRenderer {
 
     
     this.scene.add(group);
-    this.carMeshes.set(id, { group });
+    this.carMeshes.set(id, { group, velY: 0 }); // velY tracks gravity between frames
   }
 
-  updateCar(id, car) {
+  updateCar(id, car, dt = 0.016) {
     let meshObj = this.carMeshes.get(id);
     if (!meshObj) {
         this.createCar(id, car);
@@ -396,9 +396,7 @@ export class ThreeRenderer {
     const group = meshObj.group;
     
     // Raycast downward to find the track surface (or ground as fallback).
-    // Previously used trackMeshes[1] which was a stripe tile after the environment
-    // refactor — now using a dedicated this.trackSurface reference.
-    let elevation = 3; // default: track base height
+    let surfaceY = 3; // default: track base height
     const origin = new THREE.Vector3(car.body.position.x, 500, car.body.position.y);
     const down   = new THREE.Vector3(0, -1, 0);
     const raycaster = new THREE.Raycaster(origin, down);
@@ -406,15 +404,23 @@ export class ThreeRenderer {
     if (this.trackSurface) {
         const hits = raycaster.intersectObject(this.trackSurface);
         if (hits.length > 0) {
-            elevation = hits[0].point.y;
+            surfaceY = hits[0].point.y;
         } else if (this.groundMesh) {
-            // car is off the track — find the flat ground instead
             const gHits = raycaster.intersectObject(this.groundMesh);
-            if (gHits.length > 0) elevation = gHits[0].point.y;
+            if (gHits.length > 0) surfaceY = gHits[0].point.y;
         }
     }
     
-    group.position.set(car.body.position.x, elevation, car.body.position.y);
+    // Gravity: accelerate downward while airborne, clamp to surface on landing.
+    const GRAVITY = 500; // units/s² — tuned for toy-car scale
+    meshObj.velY -= GRAVITY * dt;
+    let newY = group.position.y + meshObj.velY * dt;
+    if (newY <= surfaceY) {
+        newY = surfaceY;
+        meshObj.velY = 0; // zero velocity on landing (no bounce)
+    }
+    
+    group.position.set(car.body.position.x, newY, car.body.position.y);
     group.rotation.y = -car.body.angle; 
   }
 
