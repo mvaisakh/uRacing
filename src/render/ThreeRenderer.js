@@ -268,6 +268,81 @@ export class ThreeRenderer {
     }
   }
 
+  _buildCarBody(group, style, L, W, H, bodyMat, glassMat, wheelMat) {
+    // Helper to add a box part
+    const box = (lx, ly, lz, x, y, z, mat) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(lx, ly, lz), mat);
+      m.position.set(x, y, z); group.add(m); return m;
+    };
+    // Helper to add a wheel cylinder (axis along Z)
+    const wheel = (x, y, z) => {
+      const geo = new THREE.CylinderGeometry(5, 5, W + 4, 10);
+      geo.rotateX(Math.PI / 2);
+      const m = new THREE.Mesh(geo, wheelMat);
+      m.position.set(x, y, z); group.add(m);
+    };
+
+    const wY = 5; // wheel centre height
+
+    if (style === 'sedan') {
+      // Classic 3-box: long front hood, mid cabin, short trunk
+      box(L,      H,      W,      0,           H/2,    0,        bodyMat); // floor chassis
+      box(L*0.36, H*0.70, W-2,    -L*0.04,     H+H*0.35, 0,    glassMat); // passenger cabin
+      box(L*0.28, H*0.30, W-2,    L*0.28,      H+H*0.15, 0,    bodyMat); // engine hood slope
+      box(L*0.22, H*0.20, W-2,   -L*0.33,      H+H*0.10, 0,    bodyMat); // trunk slope
+      box(2, H*0.3, W-4,  L/2,   H*0.6,   0,  new THREE.MeshBasicMaterial({color:0xffffaa})); // headlights
+      wheel(L/2-7,  wY,  0);
+      wheel(-L/2+7, wY,  0);
+
+    } else if (style === 'sports') {
+      // Low, wide, long hood, short cabin pushed far back, rear spoiler
+      const sH = H * 0.7;
+      box(L,      sH,     W*1.1,  0,           sH/2,   0,        bodyMat);
+      box(L*0.28, sH*0.70,W-4,   -L*0.15,      sH+sH*0.35, 0,   glassMat);
+      box(L*0.40, sH*0.15,W-2,    L*0.22,       sH+sH*0.08, 0,  bodyMat); // long hood
+      // rear spoiler
+      box(L*0.08, sH*0.40, W+4,  -L*0.42,      sH+sH*0.40, 0,  bodyMat);
+      box(2, sH*0.3, W-4, L/2,   sH*0.6, 0,    new THREE.MeshBasicMaterial({color:0xffffaa}));
+      wheel(L/2-7,  4, 0);
+      wheel(-L/2+7, 4, 0);
+
+    } else if (style === 'hatchback') {
+      // Compact, tallish cabin that runs all the way to the rear — no trunk
+      box(L,      H,      W,      0,           H/2,   0,         bodyMat);
+      box(L*0.50, H*0.80, W-2,   -L*0.12,      H+H*0.40, 0,    glassMat); // big tall cabin
+      box(L*0.28, H*0.20, W-2,    L*0.27,      H+H*0.10, 0,    bodyMat); // short hood
+      box(2, H*0.3, W-4,  L/2,   H*0.65, 0,   new THREE.MeshBasicMaterial({color:0xffffaa}));
+      wheel(L/2-6,  wY, 0);
+      wheel(-L/2+6, wY, 0);
+
+    } else if (style === 'suv') {
+      // Tall, wide, boxy — roof rack bars on top
+      const sH = H * 1.3;
+      box(L,      sH,     W*1.2,  0,           sH/2,   0,        bodyMat);
+      box(L*0.52, sH*0.65,W*1.2-2,-L*0.04,     sH+sH*0.33, 0,  glassMat);
+      box(L*0.20, sH*0.20,W*1.2-2, L*0.32,     sH+sH*0.10, 0,  bodyMat);
+      // Roof rack
+      box(L*0.40, 2,      4,      -L*0.10,     sH*1.67, -W*0.5, bodyMat);
+      box(L*0.40, 2,      4,      -L*0.10,     sH*1.67,  W*0.5, bodyMat);
+      box(2, H*0.3, W-4,  L/2,   sH*0.6, 0,   new THREE.MeshBasicMaterial({color:0xffffaa}));
+      wheel(L/2-8,  wY, 0);
+      wheel(-L/2+8, wY, 0);
+
+    } else { // mini / city car
+      // Short, tall, rounded feel — big wheels relative to size
+      const mL = L * 0.75, mW = W * 0.9, mH = H * 1.1;
+      box(mL,     mH,     mW,     0,           mH/2,  0,         bodyMat);
+      box(mL*0.7, mH*0.75,mW-2,   0,           mH+mH*0.38, 0,  glassMat);
+      box(mL*0.18,mH*0.15,mW-2,   mL*0.36,     mH+mH*0.08, 0,  bodyMat);
+      box(2, mH*0.3, mW-4, mL/2,  mH*0.6, 0,  new THREE.MeshBasicMaterial({color:0xffffaa}));
+      const geo = new THREE.CylinderGeometry(6, 6, mW+4, 10);
+      geo.rotateX(Math.PI / 2);
+      const wf = new THREE.Mesh(geo, wheelMat); wf.position.set(mL/2-5, 6, 0); group.add(wf);
+      const wb = new THREE.Mesh(geo.clone(), wheelMat); wb.position.set(-mL/2+5, 6, 0); group.add(wb);
+      return; // already added wheels above
+    }
+  }
+
   createCar(id, car) {
     if (this.carMeshes.has(id)) {
         this.scene.remove(this.carMeshes.get(id).group);
@@ -275,69 +350,33 @@ export class ThreeRenderer {
 
     const group = new THREE.Group();
     
-    const toyMaterialBody = new THREE.MeshPhysicalMaterial({
+    const bodyMat = new THREE.MeshPhysicalMaterial({
         color: car.spec.color,
         metalness: 0.1,
         roughness: 0.1,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.1
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.05
     });
+    const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0x111122,
+        metalness: 0.7,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.85
+    });
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
 
-    const toyGlass = new THREE.MeshPhysicalMaterial({
-        color: 0x111111,
-        metalness: 0.8,
-        roughness: 0.2
-    });
-    
-    // Procedural Low Poly Chassis — dimensions driven by vehicle stats
+    // Dimensions still vary by stats for proportional variety even within styles
     const stats = car.spec.stats;
-    // topSpeed: 380–520, weight: 0.95–1.8 physics scale, driftFactor: 0.90–0.96
-    const speedNorm = stats ? Math.min((stats.topSpeed - 380) / 140, 1) : 0.5;  // 0–1
-    const weightNorm = stats ? Math.min((stats.weight - 0.9) / 0.9, 1) : 0.5;  // 0–1
-    const driftNorm = stats ? 1 - Math.min((stats.driftFactor - 0.88) / 0.08, 1) : 0.5; // 0–1, higher = more drift
+    const speedNorm  = stats ? Math.min((stats.topSpeed  - 380) / 140, 1) : 0.5;
+    const weightNorm = stats ? Math.min((stats.weight    - 0.9)  / 0.9, 1) : 0.5;
+    const W = 14 + weightNorm * 8;  // 14–22
+    const L = 28 + speedNorm  * 14; // 28–42
+    const H = 7  + weightNorm * 6;  // 7–13
 
-    // Fast cars are longer and lower. Heavy cars are wider and taller.
-    const width = 14 + weightNorm * 10; // 14 to 24
-    const length = 28 + speedNorm * 16; // 28 to 44
-    const height = 7 + weightNorm * 7;  // 7 to 14
-    
-    const chassisGeo = new THREE.BoxGeometry(length, height, width);
-    const chassis = new THREE.Mesh(chassisGeo, toyMaterialBody);
-    chassis.position.y = height / 2 + 4;
-    
-    // Cabin size depends on drift and handling
-    const cabinLength = length * 0.4;
-    const cabinWidth = width - 4;
-    const cabinHeight = height * 0.7;
-    const cabinGeo = new THREE.BoxGeometry(cabinLength, cabinHeight, cabinWidth);
-    const cabin = new THREE.Mesh(cabinGeo, toyGlass);
-    cabin.position.y = height + 4;
-    
-    // Position cabin based on engine layout (drift cars have longer front hoods)
-    cabin.position.x = -(length * 0.1) + (driftNorm * length * 0.15);
-    
-    // Procedural Wheels
-    const wheelGeo = new THREE.CylinderGeometry(4, 4, width + 2, 8);
-    wheelGeo.rotateX(Math.PI / 2); // Rotate to align cylinder along Z axis
-    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
-    
-    const frontWheels = new THREE.Mesh(wheelGeo, wheelMat);
-    frontWheels.position.set(length / 2 - 6, 4, 0);
-    
-    const backWheels = new THREE.Mesh(wheelGeo, wheelMat);
-    backWheels.position.set(-length / 2 + 6, 4, 0);
+    const style = car.spec.bodyStyle || 'sedan';
+    this._buildCarBody(group, style, L, W, H, bodyMat, glassMat, wheelMat);
 
-    // Front headlights for detail
-    const lightGeo = new THREE.BoxGeometry(2, 2, width - 6);
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const headlights = new THREE.Mesh(lightGeo, lightMat);
-    headlights.position.set(length / 2, height/2 + 4, 0);
-
-    group.add(chassis);
-    group.add(cabin);
-    group.add(frontWheels);
-    group.add(backWheels);
-    group.add(headlights);
     
     this.scene.add(group);
     this.carMeshes.set(id, { group });
