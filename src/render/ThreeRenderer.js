@@ -409,7 +409,7 @@ export class ThreeRenderer {
         this.camera.position.set(40, 20, 50);
         this.camera.lookAt(0, 0, 0);
     } else {
-        this.scene.background = new THREE.Color(0x87CEEB);
+        this.scene.fog = null; // track's _buildThemeEnvironment will reset fog
         this.trackMeshes.forEach(m => m.visible = true);
         this.carMeshes.forEach((mesh, id) => {
             if (id !== 'preview') mesh.group.visible = true;
