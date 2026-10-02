@@ -192,14 +192,16 @@ export class ThreeRenderer {
 
     if (!splineSamples || splineSamples.length === 0) return;
 
-    // Add jumps/elevation based on progress
+    // Lift the whole track 3 units above the ground plane (which is at Y=-3)
+    // so the top surface is always at Y≥3, preventing Z-fighting with the ground.
+    const trackBaseY = 3;
     const totalLen = splineSamples.length;
     const pts = splineSamples.map((s, idx) => {
         const progress = idx / totalLen;
-        // Add a jump in the middle of the track (progress 0.4 to 0.6)
-        let elevation = 0;
-        if (progress > 0.3 && progress < 0.7) {
-            elevation = Math.sin((progress - 0.3) * Math.PI / 0.4) * 45; // 45 units high jump
+        // Gentle jump ramp: 0→peak(25u)→0 between 35%–65% of lap
+        let elevation = trackBaseY;
+        if (progress > 0.35 && progress < 0.65) {
+            elevation += Math.sin((progress - 0.35) * Math.PI / 0.30) * 25;
         }
         return new THREE.Vector3(s.point.x, elevation, s.point.y);
     });
