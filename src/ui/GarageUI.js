@@ -73,7 +73,7 @@ export class GarageUI {
     ctx.fillStyle = '#4ae3b5';
     ctx.font = 'bold 28px "Impact", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('μRACING // DIE-CAST GARAGE', 40, 60);
+    ctx.fillText('μRACING // GARAGE', 40, 60);
 
     ctx.textAlign = 'right';
     ctx.font = 'bold 20px monospace';
