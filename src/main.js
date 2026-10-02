@@ -218,6 +218,7 @@ function initGame() {
   touchControls.setCallbacks({
     onGaragePrev: () => garageUI.prevCar(),
     onGarageNext: () => garageUI.nextCar(),
+    onGarageSelectIndex: (i) => garageUI.selectIndex(i),
     onGarageAction: () => {
       const res = garageUI.buyOrSelect();
       if (res.action === 'selected') {
@@ -226,6 +227,7 @@ function initGame() {
     },
     onTrackPrev: () => trackSelectUI.prevTrack(),
     onTrackNext: () => trackSelectUI.nextTrack(),
+    onTrackSelectIndex: (i) => trackSelectUI.selectIndex(i),
     onTrackAction: () => trackSelectUI.selectCurrent(),
     onOppMinus: () => trackSelectUI.changeOpponentCount(-1),
     onOppPlus: () => trackSelectUI.changeOpponentCount(1),

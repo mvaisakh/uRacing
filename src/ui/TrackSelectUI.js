@@ -81,6 +81,12 @@ export class TrackSelectUI {
     this.currentIndex = (this.currentIndex - 1 + this.tracksList.length) % this.tracksList.length;
   }
 
+  selectIndex(index) {
+    if (index >= 0 && index < this.tracksList.length) {
+      this.currentIndex = index;
+    }
+  }
+
   getCurrentTrack() {
     return this.tracksList[this.currentIndex];
   }

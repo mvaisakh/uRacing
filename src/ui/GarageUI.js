@@ -30,6 +30,13 @@ export class GarageUI {
     this.previewCar = new Car(this.carsList[this.currentIndex]);
   }
 
+  selectIndex(index) {
+    if (index >= 0 && index < this.carsList.length) {
+      this.currentIndex = index;
+      this.previewCar = new Car(this.carsList[this.currentIndex]);
+    }
+  }
+
   getCurrentCar() {
     return this.carsList[this.currentIndex];
   }

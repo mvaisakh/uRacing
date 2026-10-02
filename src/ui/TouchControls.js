@@ -119,6 +119,53 @@ export class TouchControls {
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd, { passive: false });
     window.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+    // Mouse pointer fallback for desktop testing / clicking menu elements
+    let isMouseDown = false;
+    let mouseTargetBtn = null;
+    let mouseStartX = 0;
+    let mouseStartY = 0;
+    let mouseStartTime = 0;
+
+    window.addEventListener('mousedown', (e) => {
+      // Ignore if handled by touch
+      if (this.activeTouches.size > 0) return;
+      isMouseDown = true;
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      mouseStartTime = Date.now();
+
+      const hitBtn = this._hitTest(e.clientX, e.clientY);
+      if (hitBtn) {
+        mouseTargetBtn = hitBtn.id;
+        this._handleButtonState(hitBtn.id, true);
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (!isMouseDown) return;
+      isMouseDown = false;
+
+      if (mouseTargetBtn) {
+        this._handleButtonState(mouseTargetBtn, false);
+        mouseTargetBtn = null;
+      }
+
+      if (this.currentMode !== 'RACE') {
+        const dx = e.clientX - mouseStartX;
+        const dy = e.clientY - mouseStartY;
+        const dt = Date.now() - mouseStartTime;
+        if (dt < 400 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) {
+            if (this.currentMode === 'GARAGE' && this.callbacks.onGarageNext) this.callbacks.onGarageNext();
+            if (this.currentMode === 'TRACK_SELECT' && this.callbacks.onTrackNext) this.callbacks.onTrackNext();
+          } else {
+            if (this.currentMode === 'GARAGE' && this.callbacks.onGaragePrev) this.callbacks.onGaragePrev();
+            if (this.currentMode === 'TRACK_SELECT' && this.callbacks.onTrackPrev) this.callbacks.onTrackPrev();
+          }
+        }
+      }
+    });
   }
 
   _handleButtonState(btnId, isPressed) {
@@ -139,6 +186,10 @@ export class TouchControls {
       if (btnId === 'menuPrev' && this.callbacks.onGaragePrev) this.callbacks.onGaragePrev();
       if (btnId === 'menuNext' && this.callbacks.onGarageNext) this.callbacks.onGarageNext();
       if (btnId === 'menuAction' && this.callbacks.onGarageAction) this.callbacks.onGarageAction();
+      if (btnId.startsWith('garageDot_') && this.callbacks.onGarageSelectIndex) {
+        const idx = parseInt(btnId.replace('garageDot_', ''), 10);
+        this.callbacks.onGarageSelectIndex(idx);
+      }
     } else if (this.currentMode === 'TRACK_SELECT' && isPressed) {
       if (btnId === 'menuPrev' && this.callbacks.onTrackPrev) this.callbacks.onTrackPrev();
       if (btnId === 'menuNext' && this.callbacks.onTrackNext) this.callbacks.onTrackNext();
@@ -146,6 +197,10 @@ export class TouchControls {
       if (btnId === 'menuBack' && this.callbacks.onEscape) this.callbacks.onEscape();
       if (btnId === 'oppMinus' && this.callbacks.onOppMinus) this.callbacks.onOppMinus();
       if (btnId === 'oppPlus' && this.callbacks.onOppPlus) this.callbacks.onOppPlus();
+      if (btnId.startsWith('trackDot_') && this.callbacks.onTrackSelectIndex) {
+        const idx = parseInt(btnId.replace('trackDot_', ''), 10);
+        this.callbacks.onTrackSelectIndex(idx);
+      }
     }
   }
 
@@ -245,9 +300,31 @@ export class TouchControls {
     const btnY = cardY + cardH - 56;
 
     this._registerButton('menuAction', btnX, btnY, btnW, btnH);
+
+    // Register dot matrix hitboxes for 16 vehicles
+    const totalCars = 16;
+    const dotSpacing = 28;
+    const matrixW = (totalCars - 1) * dotSpacing;
+    const matrixStartX = width / 2 - matrixW / 2;
+    const matrixY = 46;
+    const dotHitRadius = 14;
+
+    for (let i = 0; i < totalCars; i++) {
+      const dx = matrixStartX + i * dotSpacing;
+      this._registerButton(`garageDot_${i}`, dx - dotHitRadius, matrixY - dotHitRadius, dotHitRadius * 2, dotHitRadius * 2);
+    }
   }
 
   _renderTrackMenuControls(ctx, width, height) {
+    // Layout geometry matching TrackSelectUI
+    const mainY = 90;
+    const mainH = height - mainY - 60;
+    const totalW = Math.min(1080, width - 48);
+    const startX = (width - totalW) / 2;
+    const leftW = Math.floor(totalW * 0.58);
+    const rightW = totalW - leftW - 20;
+    const rightX = startX + leftW + 20;
+
     // Chevrons
     const chevW = 64;
     const chevH = 100;
@@ -260,6 +337,17 @@ export class TouchControls {
     const backW = 100;
     const backH = 38;
     this._registerAndDrawButton(ctx, 'menuBack', 16, 16, backW, backH, '◄ GARAGE', '#1e272e', '#00f2fe');
+
+    // Track Carousel Dot Nodes (6 tracks)
+    const totalTracks = 6;
+    const dotSpacing = 32;
+    const matrixStartX = width / 2 - ((totalTracks - 1) * dotSpacing) / 2;
+    const dotY = 45;
+    const dotHitRadius = 16;
+    for (let i = 0; i < totalTracks; i++) {
+      const dx = matrixStartX + i * dotSpacing;
+      this._registerButton(`trackDot_${i}`, dx - dotHitRadius, dotY - dotHitRadius, dotHitRadius * 2, dotHitRadius * 2);
+    }
 
     // Opponents Stepper touch targets
     const gridY = mainY + 104;
