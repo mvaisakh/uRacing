@@ -1,5 +1,6 @@
 import { Vec2 } from '../math/Vec2.js';
 import { CircleCollider, AABB } from '../physics/Colliders.js';
+import { DamageSystem } from '../physics/DamageSystem.js';
 
 /**
  * Prop: Micro tabletop props with 2.5D pseudo-3D extrusion (soda cans, batteries, coffee mugs, sponge boxes)
@@ -40,6 +41,8 @@ export class WorldProp {
         const dot = car.body.velocity.dot(normal);
         if (dot < 0) {
           car.body.velocity.sub(normal.clone().scale(dot * 1.5));
+          const contactPt = this.position.clone().add(normal.clone().scale(this.radius));
+          DamageSystem.applyDamage(car, Math.abs(dot), contactPt);
         }
         return true;
       }

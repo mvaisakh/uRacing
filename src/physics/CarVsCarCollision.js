@@ -1,4 +1,5 @@
 import { Vec2 } from '../math/Vec2.js';
+import { DamageSystem } from './DamageSystem.js';
 
 /**
  * CarVsCarCollision: Detects and resolves elastic collisions between two moving cars.
@@ -89,6 +90,11 @@ export class CarVsCarCollision {
         // Spin transfer
         carA.body.angularVelocity -= rACrossN * impulseMag * invInertiaA * 0.45;
         carB.body.angularVelocity += rBCrossN * impulseMag * invInertiaB * 0.45;
+
+        // Apply collision damage and deformation to both vehicles
+        const closingSpeed = Math.abs(velAlongNormal);
+        DamageSystem.applyDamage(carA, closingSpeed, contactPt);
+        DamageSystem.applyDamage(carB, closingSpeed, contactPt);
 
         return true;
       }

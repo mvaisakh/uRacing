@@ -316,6 +316,22 @@ export class ThreeRenderer {
         fogColor: 0xe0e1dd,
         fogNear: 800, fogFar: 3200,
         stripeTile: 60
+      },
+      sandbox: {
+        sky: 0xf6d365,        // warm sunny outdoor daylight
+        ground: 0xd4a373,     // golden sandbox sand
+        groundAlt: 0xc5925e,  // rippled sand dunes
+        fogColor: 0xf8e9a1,
+        fogNear: 900, fogFar: 3500,
+        stripeTile: 140
+      },
+      mud_garden: {
+        sky: 0x8ecae6,        // overcast humid outdoor light
+        ground: 0x4a3525,     // dark rich garden soil / mud
+        groundAlt: 0x3d2b1f,  // wet soil trenches
+        fogColor: 0xa8dadc,
+        fogNear: 800, fogFar: 3200,
+        stripeTile: 100
       }
     };
     const t = themes[envKey] || themes.kitchen;
@@ -358,6 +374,10 @@ export class ThreeRenderer {
       this._addGardenDecor();
     } else if (envKey === 'playroom') {
       this._addPlayroomDecor();
+    } else if (envKey === 'sandbox') {
+      this._addSandboxDecor();
+    } else if (envKey === 'mud_garden') {
+      this._addMudGardenDecor();
     } else {
       this._addOfficeDecor();
     }
@@ -604,6 +624,73 @@ export class ThreeRenderer {
     lampGroup.position.set(-750, 0, -600);
     this.scene.add(lampGroup);
     this.trackMeshes.push(lampGroup);
+  }
+
+  _addSandboxDecor() {
+    // Red Toy Dump Bucket
+    const bucketMat = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+    const bucket = new THREE.Mesh(new THREE.CylinderGeometry(110, 85, 170, 20), bucketMat);
+    bucket.position.set(650, 85, 250);
+    bucket.rotation.z = 0.15;
+    this.scene.add(bucket);
+    this.trackMeshes.push(bucket);
+
+    // Yellow Plastic Sandbox Shovel leaning on ground
+    const shovelMat = new THREE.MeshLambertMaterial({ color: 0xf1c40f });
+    const shovelHandle = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 320, 12), shovelMat);
+    shovelHandle.position.set(-450, 60, -220);
+    shovelHandle.rotation.z = 1.1;
+    shovelHandle.rotation.y = 0.4;
+    const shovelBlade = new THREE.Mesh(new THREE.BoxGeometry(90, 100, 14), shovelMat);
+    shovelBlade.position.set(-580, 12, -260);
+    shovelBlade.rotation.y = 0.4;
+    this.scene.add(shovelHandle); this.scene.add(shovelBlade);
+    this.trackMeshes.push(shovelHandle, shovelBlade);
+
+    // Quarry Stone Boulders scattered outside racing ribbon
+    const rockMat = new THREE.MeshLambertMaterial({ color: 0x8d99ae, roughness: 0.9 });
+    const boulders = [
+      [-600, 450], [450, -450], [-250, 550], [550, 480], [-700, -100]
+    ];
+    boulders.forEach(([x, z], i) => {
+      const bGeo = new THREE.DodecahedronGeometry(55 + (i % 3) * 18, 1);
+      const boulder = new THREE.Mesh(bGeo, rockMat);
+      boulder.position.set(x, 30, z);
+      boulder.rotation.set(i * 0.4, i * 0.7, 0);
+      boulder.scale.set(1.4, 0.9, 1.2);
+      this.scene.add(boulder);
+      this.trackMeshes.push(boulder);
+    });
+  }
+
+  _addMudGardenDecor() {
+    // Weathered Timber Beams / Wooden Fence Posts bordering the mud run
+    const woodMat = new THREE.MeshLambertMaterial({ color: 0x5c4033 });
+    const posts = [
+      [-550, -420], [250, -480], [750, -150], [600, 450], [-450, 480], [-800, 150]
+    ];
+    posts.forEach(([x, z], i) => {
+      const pGeo = new THREE.BoxGeometry(28, 160, 28);
+      const post = new THREE.Mesh(pGeo, woodMat);
+      post.position.set(x, 75, z);
+      post.rotation.y = i * 0.3;
+      this.scene.add(post);
+      this.trackMeshes.push(post);
+    });
+
+    // Dark Earth Mud Mounds / Soil Piles in open infield
+    const dirtMat = new THREE.MeshLambertMaterial({ color: 0x3d2b1f, roughness: 0.95 });
+    const mounds = [
+      [0, -150], [-250, 150], [350, 180]
+    ];
+    mounds.forEach(([x, z]) => {
+      const mGeo = new THREE.ConeGeometry(130, 75, 16);
+      const mound = new THREE.Mesh(mGeo, dirtMat);
+      mound.position.set(x, 35, z);
+      mound.scale.set(1.5, 0.7, 1.5);
+      this.scene.add(mound);
+      this.trackMeshes.push(mound);
+    });
   }
 
   _buildDetailedProp(prop) {
@@ -915,14 +1002,17 @@ export class ThreeRenderer {
     const trackWidth = trackConfig.trackWidth || 140;
     const { trackGeom, leftGeom, rightGeom } = this._buildTrackRibbon(splineSamples, trackWidth, elevFn);
 
-    const trackMat = new THREE.MeshLambertMaterial({ color: 0xff6600, side: THREE.DoubleSide });
+    const ribbonCol = trackConfig.ribbonColor !== undefined ? trackConfig.ribbonColor : 0xff6600;
+    const edgeCol = trackConfig.edgeColor !== undefined ? trackConfig.edgeColor : 0xcc0000;
+
+    const trackMat = new THREE.MeshLambertMaterial({ color: ribbonCol, side: THREE.DoubleSide });
     const trackMesh = new THREE.Mesh(trackGeom, trackMat);
     trackMesh.receiveShadow = true;
     this.trackSurface = trackMesh; // dedicated ref used by raycast in updateCar
     this.scene.add(trackMesh);
     this.trackMeshes.push(trackMesh);
 
-    const edgeMat = new THREE.MeshLambertMaterial({ color: 0xcc0000, side: THREE.DoubleSide });
+    const edgeMat = new THREE.MeshLambertMaterial({ color: edgeCol, side: THREE.DoubleSide });
     const leftMesh = new THREE.Mesh(leftGeom, edgeMat);
     const rightMesh = new THREE.Mesh(rightGeom, edgeMat);
     leftMesh.castShadow = true;
@@ -1256,6 +1346,18 @@ export class ThreeRenderer {
         { type: 'pencil', variants: [0, 1, 2], w: 44, h: 44 },
         { type: 'eraser', variants: [0, 1, 2], w: 38, h: 38 },
         { type: 'sharpener', variants: [0, 1, 2], w: 40, h: 40 }
+      ];
+    } else if (env === 'sandbox') {
+      propPool = [
+        { type: 'utensil', variants: [0, 1, 2], w: 48, h: 48 }, // toy shovels/spoons
+        { type: 'sharpener', variants: [0, 1], w: 42, h: 42 },
+        { type: 'paint', variants: [0, 1], w: 44, h: 44 }
+      ];
+    } else if (env === 'mud_garden') {
+      propPool = [
+        { type: 'vegetable', variants: [0, 1, 2], w: 48, h: 48 },
+        { type: 'utensil', variants: [0, 1], w: 44, h: 44 },
+        { type: 'pencil', variants: [0, 2], w: 40, h: 40 }
       ];
     } else { // garden
       propPool = [
@@ -1686,7 +1788,76 @@ export class ThreeRenderer {
     }
 
     this.scene.add(group);
-    this.carMeshes.set(id, { group, velY: 0 });
+    
+    // Cache body mesh & pristine vertex buffer for dynamic collision denting
+    let carMesh = null;
+    let origPositions = null;
+    group.traverse((child) => {
+      if (!carMesh && child.isMesh && child.geometry && child.geometry.attributes && child.geometry.attributes.position) {
+        if (!child.geometry.userData.isShadow) {
+          carMesh = child;
+          origPositions = new Float32Array(child.geometry.attributes.position.array);
+        }
+      }
+    });
+
+    this.carMeshes.set(id, { group, carMesh, origPositions, processedImpacts: 0, velY: 0 });
+  }
+
+  _applyMeshDenting(meshObj, car) {
+    if (!meshObj.carMesh || !meshObj.origPositions || !car.impactEvents || car.impactEvents.length === 0) return;
+    if (car.impactEvents.length <= meshObj.processedImpacts) return;
+
+    const geom = meshObj.carMesh.geometry;
+    const posAttr = geom.attributes.position;
+    const currentPos = posAttr.array;
+    const origPos = meshObj.origPositions;
+    const group = meshObj.group;
+
+    // Process new impacts since last frame
+    for (let k = meshObj.processedImpacts; k < car.impactEvents.length; k++) {
+      const imp = car.impactEvents[k];
+      // Convert world impact pos into car local coordinates
+      const worldVec = new THREE.Vector3(imp.worldPos.x, group.position.y + 4, imp.worldPos.y);
+      const localVec = worldVec.clone();
+      group.worldToLocal(localVec);
+
+      const dentRadius = 14 * imp.intensity; // Impact radius in local units
+      const dentRadiusSq = dentRadius * dentRadius;
+      const dentDepth = 3.5 * imp.intensity;
+
+      for (let i = 0; i < posAttr.count; i++) {
+        const idx = i * 3;
+        const vx = currentPos[idx];
+        const vy = currentPos[idx + 1];
+        const vz = currentPos[idx + 2];
+
+        const dx = vx - localVec.x;
+        const dy = vy - localVec.y;
+        const dz = vz - localVec.z;
+        const dSq = dx * dx + dy * dy + dz * dz;
+
+        if (dSq < dentRadiusSq) {
+          const d = Math.sqrt(dSq);
+          const factor = (1 - d / dentRadius);
+          // Push vertices inward toward car centroid (0, 4, 0)
+          const toCenterX = -vx;
+          const toCenterY = 4 - vy;
+          const toCenterZ = -vz;
+          const centerLen = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY + toCenterZ * toCenterZ) || 1;
+
+          // Add realistic localized crumple
+          const pushAmount = dentDepth * factor;
+          currentPos[idx]     += (toCenterX / centerLen) * pushAmount + (Math.random() - 0.5) * factor * 0.8;
+          currentPos[idx + 1] += (toCenterY / centerLen) * pushAmount * 0.5;
+          currentPos[idx + 2] += (toCenterZ / centerLen) * pushAmount + (Math.random() - 0.5) * factor * 0.8;
+        }
+      }
+    }
+
+    meshObj.processedImpacts = car.impactEvents.length;
+    posAttr.needsUpdate = true;
+    geom.computeVertexNormals();
   }
 
   updateCar(id, car, dt = 0.016) {
@@ -1799,6 +1970,19 @@ export class ThreeRenderer {
         }
       }
       this.lastWheels.set(id, { wl: wlPos, wr: wrPos });
+
+      // Apply real-time 3D deformation denting
+      this._applyMeshDenting(meshObj, car);
+
+      // Emit engine damage smoke when vehicle health is degraded (< 50 HP)
+      if (car.health !== undefined && car.health < 50) {
+        const hoodX = car.body.position.x + cosA * 8;
+        const hoodZ = car.body.position.y + sinA * 8;
+        const smokeChance = car.health < 25 ? 0.85 : 0.45;
+        if (Math.random() < smokeChance) {
+          this._emitSmoke(hoodX, newY + 4, hoodZ, car.body.velocity.x, car.body.velocity.y);
+        }
+      }
     }
   }
 

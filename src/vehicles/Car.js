@@ -20,6 +20,11 @@ export class Car {
     this.lateralVelocity = 0;
     this.isDrifting = false;
     this.surfaceGripMultiplier = 1.0;
+
+    // Structural Health & Damage
+    this.maxHealth = 100;
+    this.health = 100;
+    this.impactEvents = [];
   }
 
   reset(x = 0, y = 0, angle = 0) {
@@ -31,6 +36,8 @@ export class Car {
     this.forwardVelocity = 0;
     this.lateralVelocity = 0;
     this.isDrifting = false;
+    this.health = 100;
+    this.impactEvents = [];
   }
 
   update(controls, dt) {
@@ -42,18 +49,22 @@ export class Car {
     this.forwardVelocity = this.body.velocity.dot(heading);
     this.lateralVelocity = this.body.velocity.dot(right);
 
-    // 1. Throttle / Acceleration Force (modulates with surface traction & hauling torque)
+    // 1. Throttle / Acceleration Force (modulates with surface traction, hauling torque & damage)
     if (throttle > 0) {
+      const healthRatio = (this.health !== undefined ? this.health : 100) / 100;
+      const perfScalar = 0.70 + 0.30 * healthRatio; // up to 30% reduction when heavily damaged
+
+      const baseTopSpeed = this.spec.stats.topSpeed * perfScalar;
       const topSpeedCap = (this.surfaceType === 'mud' || this.surfaceType === 'dirt')
-        ? this.spec.stats.topSpeed * (0.65 + (this.spec.stats.offroad || 0.5) * 0.35)
-        : this.spec.stats.topSpeed;
+        ? baseTopSpeed * (0.65 + (this.spec.stats.offroad || 0.5) * 0.35)
+        : baseTopSpeed;
 
       if (this.forwardVelocity < topSpeedCap) {
         // Torque provides raw pulling force in rough terrain (SUVs power through mud while supercars bog down)
         const torqueFactor = (this.surfaceType === 'mud' || this.surfaceType === 'dirt')
           ? ((this.spec.stats.torque || 400) / 450)
           : 1.0;
-        const driveForce = heading.clone().scale(throttle * this.spec.stats.acceleration * this.surfaceGripMultiplier * torqueFactor);
+        const driveForce = heading.clone().scale(throttle * this.spec.stats.acceleration * perfScalar * this.surfaceGripMultiplier * torqueFactor);
         this.body.applyForce(driveForce);
       }
     }

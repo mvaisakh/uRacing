@@ -7,7 +7,7 @@ export class SpeedometerHUD {
     this.radius = size / 2;
   }
 
-  render(ctx, screenX, screenY, speed, topSpeed, isDrifting) {
+  render(ctx, screenX, screenY, speed, topSpeed, isDrifting, health = 100) {
     ctx.save();
     ctx.translate(screenX + this.radius, screenY + this.radius);
 
@@ -18,6 +18,23 @@ export class SpeedometerHUD {
     ctx.beginPath();
     ctx.arc(0, 0, this.radius - 4, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
+
+    // 1.5. Vehicle Health / Structural Integrity Ring (Outer Border)
+    const healthRatio = Math.max(0, Math.min(1, health / 100));
+    const healthColor = healthRatio > 0.6 ? '#2ecc71' : (healthRatio > 0.3 ? '#f39c12' : '#e74c3c');
+    
+    // Background health track
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius - 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Active health arc
+    ctx.strokeStyle = healthColor;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * healthRatio);
     ctx.stroke();
 
     // 2. Ticks & Outer Speed Arc

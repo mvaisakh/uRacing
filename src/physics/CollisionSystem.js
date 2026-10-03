@@ -1,4 +1,5 @@
 import { Vec2 } from '../math/Vec2.js';
+import { DamageSystem } from './DamageSystem.js';
 
 /**
  * Barrier / Segment collision resolver
@@ -70,6 +71,11 @@ export class CollisionSystem {
         const r = spherePos.clone().sub(car.body.position);
         const torqueKick = r.cross(hit.normal) * 0.05;
         car.body.angularVelocity += torqueKick;
+
+        // Apply collision damage and record impact deformation
+        const impactSpeed = Math.abs(normalVel);
+        DamageSystem.applyDamage(car, impactSpeed, hit.contactPoint);
+
         return true;
       }
     }

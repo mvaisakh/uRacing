@@ -519,8 +519,8 @@ function initGame() {
       // Nitro HUD Meter
       nitro.renderHUD(ctx, 310, 36);
 
-      // Speedometer Gauge
-      speedometer.render(ctx, 20, canvas.height - 150, playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerCar.isDrifting);
+      // Speedometer Gauge with Vehicle Structural Health Ring
+      speedometer.render(ctx, 20, canvas.height - 150, playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerCar.isDrifting, playerCar.health);
 
       // Minimap with all AI opponents
       minimap.render(ctx, canvas.width - 190, canvas.height - 190, playerCar, aiCars);
