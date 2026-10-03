@@ -58,7 +58,11 @@ src/
 │   ├── Colliders.js        # Circle & capsule collider geometries
 │   ├── CollisionSystem.js  # Environment prop & boundary collisions
 │   ├── CarVsCarCollision.js# Dual-circle vehicle vs vehicle elastic impulse response
+│   ├── DamageSystem.js     # Health points, armor mitigation, deformation & limp penalty
 │   └── SpatialHashGrid.js  # Broad-phase spatial partitioning
+├── powerups/               # Arcade combat weapons & power-up pickup management
+│   ├── PowerUpTypes.js     # Weapon definitions (rockets, slicks, EMP, shields, boosts)
+│   └── PowerUpManager.js   # Spawner pods, roulette timer, projectile physics & blast radii
 ├── render/                 # Three.js 3D WebGL scenes & 2D HUD overlays
 │   ├── ThreeRenderer.js    # Main 3D pipeline (track ribbons, props, lighting, cars)
 │   ├── Camera3D.js         # Smooth 3D chase camera with pitch/yaw & velocity tilt
@@ -203,6 +207,35 @@ The environment features micro-world diorama visuals rendered by Three.js:
 }
 ```
 3. The track will automatically render in the track selector, ribbon generator, minimap, and checkpoint system!
+
+---
+
+## 💥 Combat Power-Ups & Weapons Engine
+
+Power-up systems live in [`src/powerups/`](file:///Users/mvaisakh/Projects/uRacing/src/powerups/):
+1. **PowerUpManager**:
+   - Spawns rotating 3D octahedron crystal pickup orbs along circuit checkpoints.
+   - Triggers an arcade slot machine roulette animation (`rouletteTimer = 1.2s`) upon car collision.
+   - Manages active homing missiles, dropped mineral oil slicks, expanding EMP waves, and kinetic spherical force shields.
+2. **Autonomous Combat AI**:
+   - `AIController.js` periodically checks held items and opportunistically launches rockets, deploys shields, or drops oil slicks based on proximity to rivals.
+3. **Controls**:
+   - Activated via `Key E` on desktop or the on-screen virtual `[✨ USE ITEM]` button on mobile touch devices.
+
+---
+
+## 💥 Vehicle Damage Physics & 3D Mesh Denting
+
+Damage mechanics live in [`src/physics/DamageSystem.js`](file:///Users/mvaisakh/Projects/uRacing/src/physics/DamageSystem.js) and [`src/render/ThreeRenderer.js`](file:///Users/mvaisakh/Projects/uRacing/src/render/ThreeRenderer.js):
+1. **Structural Health (HP)**:
+   - Every vehicle starts with 100 HP.
+   - Impacts above 75 units/s deal damage inversely scaled by the vehicle's `weight` (armor rating). Heavier trucks and SUVs take significantly less damage than lightweight open-wheel cars.
+   - Below 50% HP, vehicles emit continuous engine smoke; below 25% HP, intense spark bursts appear.
+   - Severely damaged vehicles enter a limp-home mode with up to 30% reduction in top speed and acceleration.
+2. **Real-Time 3D Mesh Vertex Denting**:
+   - Each vehicle's original vertex buffer is cached upon creation in `ThreeRenderer.js`.
+   - On impact against barriers, props, or opponents, world contact coordinates are mapped to car local space.
+   - Vertices within the impact radius are displaced inward toward the vehicle centroid with localized crumple jitter, and vertex normals are recomputed via `geom.computeVertexNormals()`.
 
 ---
 

@@ -44,7 +44,7 @@ All vehicles are built from authentic low-poly 3D models with unique dimensions,
 
 ---
 
-## 🏁 Miniature Diorama Circuits (8 Tracks)
+## 🏁 Miniature Diorama Circuits (10 Tracks)
 
 1. **Kitchen Countertop GP** - Race across varnished oak countertops between soda cans, coffee mugs, and cooking utensils.
 2. **Workshop Workbench Derby** - Drift through a carpenter's workshop around paint cans, motor oil canisters, and bolts.
@@ -54,6 +54,21 @@ All vehicles are built from authentic low-poly 3D models with unique dimensions,
 6. **Architect Desk Loop** - Technical drafting circuit navigating around anglepoise lamps, sticky note stacks, pencil cups, and sharpeners.
 7. **μRacing 360 Inversion Speedway** - High-stakes stunt track featuring a **full vertical 360° inversion loop** with neon pre-boost acceleration strip.
 8. **μRacing Skyway & Canyon Jump** - Elevated industrial skyway bridge with kicker launch ramp spanning a **deep canyon gap**, equipped with auto-boost recovery on missed jumps.
+9. **Sandbox Quarry Dunes (Off-Road)** - Sandy desert quarry terrain with sand dunes, plastic dig buckets, and rock quarries. High off-road clearance and torque allow SUVs to blast through dunes while low-slung supercars suffer reduced traction.
+10. **Mud Trench Forest Derby (Off-Road)** - Heavy muddy garden trench circuit with damp soil trenches, deep ruts, and slippery mud pits. High-torque 4WD trucks power through mud while supercars bog down.
+
+---
+
+## 💥 Arcade Power-Ups & Weapons
+
+Engage in intense combat racing using trackside crystal pickups, random roulette selection, and tactical weapon deployment:
+
+* **🚀 Bottle Rocket:** Fires a forward-thrusting homing missile that detonates on impact, causing structural damage and blast spinout.
+* **🛢️ Mineral Oil Slick:** Drops a slick puddle behind your vehicle that causes pursuing rivals to lose all grip and spin out in a 360° skid.
+* **⚡ EMP Shockwave:** Emits an electromagnetic pulse wave that knocks out rival engines within a 200px radius.
+* **🛡️ Kinetic Barrier Shield:** Generates an impenetrable spherical energy dome that protects against missiles, shocks, and collisions.
+* **🔥 Turbo Capacitor Boost:** Overcharges propulsion thrusters for 3.0s of hyper-speed acceleration.
+* **🧲 Tractor Magnet:** Locks onto the car ahead, violently pulling your vehicle forward into their draft slipstream.
 
 ---
 
@@ -65,25 +80,27 @@ All vehicles are built from authentic low-poly 3D models with unique dimensions,
 * **Steer:** `A` / `D` or `Left` / `Right Arrow`
 * **Handbrake / Drift:** `Space`
 * **Nitrous Boost:** `Shift`
+* **Use Power-Up / Item:** `Key E`
 * **Quick Restart:** `R`
 * **Garage / Showroom:** `Escape`
 * **Showroom Carousel:** `A` / `D` or `Left` / `Right Arrow` (or click carousel buttons / node pills)
 * **Confirm / Buy / Start Race:** `Enter`
 
 ### 📱 Touch & Mobile Friendly
-* **On-Screen Virtual Controls:** Virtual steering wheel / buttons, responsive throttle, brake, drift, and boost buttons.
+* **On-Screen Virtual Controls:** Virtual steering buttons, throttle, brake, drift, boost, and a dedicated **[✨ USE ITEM]** button.
 * **Touch-Enabled UI:** Clickable and touch-navigable showroom cards, carousel chevrons, track selector cards, and action buttons.
 
 ---
 
 ## ⚙️ Physics, AI & Engine Features
 
+* **Real-Time 3D Mesh Denting Deformation:** High-speed impacts against barriers, props, or opponents dynamically deform the vehicle's 3D mesh vertices toward the car's centroid.
+* **Vehicle Structural Health & Armor Ratings:** Each vehicle starts with 100 HP. Heavier vehicles, 4WD SUVs, and haulers feature superior armor mitigation. Damaged vehicles emit progressive engine smoke (< 50% HP) and sparks (< 25% HP).
+* **Off-Road Surfaces & Torque Hauling:** Dynamic surface friction evaluation (asphalt, sand, mud, dirt). High-torque 4x4s power through mud and rough sand dunes with pulling force multipliers.
+* **Autonomous Combat AI:** Smart AI drivers collect power-up pods and autonomously deploy rockets, shields, and oil slicks against player and rival cars.
 * **3D Seamless Ribbon Track:** Closed-loop ribbon geometry with continuous Frenet frames, start-finish checker gantries, and zero mesh seam discontinuity.
 * **Inversion Stunts & Gap Jumps:** Loop physics with centrifugal adhesion, pre-boost pads, and safety recovery checkpoints with auto-boost respawn.
-* **Smart AI Drivers:** Multi-vehicle peer-separation steering, stuck detection with auto-reverse maneuvers, dynamic slipstreaming, and race line adaptation.
 * **Studio Garage Showroom:** 3-point studio lighting, PCF soft shadow mapping, rotating showcase turntable, and LED stat gauges calibrated for all vehicle tiers.
-* **Responsive 3D Particles:** Volumetric drift smoke puffs, ground-projected tire skidmarks, and collision spark bursts.
-* **Capsule Car Collisions:** 2-circle capsule collision detection preventing clipping with momentum separation and angular torque transfer.
 * **Web Audio Sound Synthesizer:** Real-time FM engine revs, dynamic drift tire screech, nitrous whoosh, and die-cast metal impact crashes.
 
 ---
