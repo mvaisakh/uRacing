@@ -518,24 +518,24 @@ export class ThreeRenderer {
     this.scene.add(paint);
     this.trackMeshes.push(paint);
 
-    // Red Heavy Steel Toolbox with handle
+    // Red Heavy Steel Toolbox with handle placed safely on the workshop workbench margin
     const redMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, metalness: 0.4, roughness: 0.4 });
     const darkMat = new THREE.MeshLambertMaterial({ color: 0x1e272e });
     const toolbox = new THREE.Mesh(new THREE.BoxGeometry(320, 170, 160), redMat);
-    toolbox.position.set(650, 85, 200);
+    toolbox.position.set(-450, 85, 0);
     toolbox.rotation.y = -0.3;
     const tbHandle = new THREE.Mesh(new THREE.BoxGeometry(110, 25, 18), darkMat);
-    tbHandle.position.set(650, 180, 200);
+    tbHandle.position.set(-450, 180, 0);
     tbHandle.rotation.y = -0.3;
     this.scene.add(toolbox); this.scene.add(tbHandle);
     this.trackMeshes.push(toolbox, tbHandle);
   }
 
   _addGardenDecor() {
-    // Terracotta Flower Pots close to circuit turns
+    // Terracotta Flower Pots positioned at safe clearances from the racetrack
     const terraMat = new THREE.MeshLambertMaterial({ color: 0xc05621 });
     const soilMat = new THREE.MeshLambertMaterial({ color: 0x271c16 });
-    [[-450, -220], [550, 150], [-250, 450]].forEach(([x, z]) => {
+    [[-50, 450], [100, -150], [-350, -120]].forEach(([x, z]) => {
       const pot = new THREE.Mesh(new THREE.CylinderGeometry(80, 56, 130, 20), terraMat);
       pot.position.set(x, 65, z);
       const soil = new THREE.Mesh(new THREE.CylinderGeometry(75, 75, 12, 20), soilMat);
@@ -543,23 +543,27 @@ export class ThreeRenderer {
       this.scene.add(pot); this.scene.add(soil);
       this.trackMeshes.push(pot, soil);
     });
-    // River Pebbles grouped along turns
+    // River Pebbles grouped decoratively beside the flower pots (safely off the track)
     const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x718096, roughness: 0.8 });
-    for (let i = 0; i < 24; i++) {
-      const r = 26 + (i % 5) * 8;
+    const pebbleClusters = [
+      [-90, 470], [-20, 430], [-60, 490], [-30, 460],
+      [70, -130], [130, -170], [140, -130], [80, -170],
+      [-380, -140], [-320, -100], [-390, -100], [-320, -140]
+    ];
+    pebbleClusters.forEach(([x, z], i) => {
+      const r = 24 + (i % 4) * 6;
       const p = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), pebbleMat);
       p.scale.set(1.4, 0.45, 1.1);
-      const angle = (i / 24) * Math.PI * 2;
-      p.position.set(Math.cos(angle) * 750 + (i % 3) * 60, 10, Math.sin(angle) * 550 + (i % 4) * 50);
+      p.position.set(x, 8, z);
       this.scene.add(p);
       this.trackMeshes.push(p);
-    }
+    });
   }
 
   _addPlayroomDecor() {
-    // Wooden Toy Building Blocks (cubes & pyramids) placed right in the infield
+    // Wooden Toy Building Blocks (cubes & pyramids) placed safely in open infield areas
     const colors = [0xe53e3e, 0x3182ce, 0xd69e2e, 0x38a169];
-    [[-300, -150], [-180, -150], [250, 200], [380, 200], [0, 320]].forEach(([x, z], idx) => {
+    [[-300, -150], [-180, -150], [150, 0], [250, 0], [0, 320]].forEach(([x, z], idx) => {
       const mat = new THREE.MeshLambertMaterial({ color: colors[idx % colors.length] });
       const block = new THREE.Mesh(new THREE.BoxGeometry(110, 110, 110), mat);
       block.position.set(x, 55, z);
@@ -1283,8 +1287,8 @@ export class ThreeRenderer {
         // Random probability to spawn: ~75% chance per node for rich tabletop Road-Rash feel
         if (pseudoRand(seed) > 0.75) return;
 
-        // Place right beside the white barrier curbs (+12 to +48 units outward)
-        const distOutward = halfTrack + 12 + pseudoRand(seed + 1) * 36;
+        // Place safely outside the barrier curbs (+32 to +75 units outward)
+        const distOutward = halfTrack + 32 + pseudoRand(seed + 1) * 43;
         const posX = p.x + n.x * side * distOutward;
         const posZ = p.y + n.y * side * distOutward;
 
@@ -1594,7 +1598,8 @@ export class ThreeRenderer {
         vertexColors: hasVertexColors && !texture,
         color: texture || hasVertexColors ? 0xffffff : new THREE.Color(car.spec.color || 0xffffff),
         roughness: 0.35,
-        metalness: 0.25
+        metalness: 0.25,
+        side: THREE.DoubleSide
       });
       const carMesh = new THREE.Mesh(geom, mat);
       carMesh.castShadow = true;
