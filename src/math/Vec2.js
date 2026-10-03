@@ -93,6 +93,12 @@ export class Vec2 {
     return this.distanceTo(v);
   }
 
+  lerp(v, alpha) {
+    this.x += (v.x - this.x) * alpha;
+    this.y += (v.y - this.y) * alpha;
+    return this;
+  }
+
   static fromAngle(angle, length = 1) {
     return new Vec2(Math.cos(angle) * length, Math.sin(angle) * length);
   }

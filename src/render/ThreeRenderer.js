@@ -568,7 +568,7 @@ export class ThreeRenderer {
       this.trackMeshes.push(pot, soil);
     });
     // River Pebbles grouped decoratively beside the flower pots (safely off the track)
-    const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x718096, roughness: 0.8 });
+    const pebbleMat = new THREE.MeshStandardMaterial({ color: 0x718096, roughness: 0.8 });
     const pebbleClusters = [
       [-90, 470], [-20, 430], [-60, 490], [-30, 460],
       [70, -130], [130, -170], [140, -130], [80, -170],
@@ -652,7 +652,7 @@ export class ThreeRenderer {
     this.trackMeshes.push(shovelHandle, shovelBlade);
 
     // Quarry Stone Boulders scattered outside racing ribbon
-    const rockMat = new THREE.MeshLambertMaterial({ color: 0x8d99ae, roughness: 0.9 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x8d99ae, roughness: 0.9 });
     const boulders = [
       [-600, 450], [450, -450], [-250, 550], [550, 480], [-700, -100]
     ];
@@ -683,7 +683,7 @@ export class ThreeRenderer {
     });
 
     // Dark Earth Mud Mounds / Soil Piles in open infield
-    const dirtMat = new THREE.MeshLambertMaterial({ color: 0x3d2b1f, roughness: 0.95 });
+    const dirtMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.95 });
     const mounds = [
       [0, -150], [-250, 150], [350, 180]
     ];
