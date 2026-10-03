@@ -29,7 +29,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.35,
       "steerRate": 3.0,
       "grip": 0.86,
-      "driftFactor": 0.93
+      "driftFactor": 0.93,
+      "offroad": 0.5,
+      "torque": 410
     }
   },
   "city_compact": {
@@ -49,7 +51,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.20,
       "steerRate": 3.3,
       "grip": 0.90,
-      "driftFactor": 0.94
+      "driftFactor": 0.94,
+      "offroad": 0.4,
+      "torque": 380
     }
   },
   "phantom_coupe": {
@@ -69,7 +73,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.45,
       "steerRate": 2.8,
       "grip": 0.88,
-      "driftFactor": 0.92
+      "driftFactor": 0.92,
+      "offroad": 0.45,
+      "torque": 440
     }
   },
 
@@ -91,7 +97,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.10,
       "steerRate": 3.5,
       "grip": 0.92,
-      "driftFactor": 0.96
+      "driftFactor": 0.96,
+      "offroad": 0.35,
+      "torque": 390
     }
   },
   "blaze_gt": {
@@ -111,7 +119,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.05,
       "steerRate": 3.6,
       "grip": 0.95,
-      "driftFactor": 0.97
+      "driftFactor": 0.97,
+      "offroad": 0.3,
+      "torque": 420
     }
   },
   "clubman_hatch": {
@@ -131,7 +141,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.02,
       "steerRate": 3.7,
       "grip": 0.94,
-      "driftFactor": 0.95
+      "driftFactor": 0.95,
+      "offroad": 0.3,
+      "torque": 400
     }
   },
 
@@ -153,7 +165,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.20,
       "steerRate": 3.7,
       "grip": 0.96,
-      "driftFactor": 0.98
+      "driftFactor": 0.98,
+      "offroad": 0.35,
+      "torque": 460
     }
   },
   "metro_cruiser": {
@@ -173,7 +187,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.65,
       "steerRate": 2.7,
       "grip": 0.94,
-      "driftFactor": 0.91
+      "driftFactor": 0.91,
+      "offroad": 0.92,
+      "torque": 540
     }
   },
   "vanguard_suv": {
@@ -193,7 +209,9 @@ export const VEHICLE_ROSTER = {
       "weight": 2.25,
       "steerRate": 2.1,
       "grip": 0.95,
-      "driftFactor": 0.88
+      "driftFactor": 0.88,
+      "offroad": 0.98,
+      "torque": 620
     }
   },
 
@@ -215,7 +233,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.05,
       "steerRate": 3.6,
       "grip": 0.92,
-      "driftFactor": 0.95
+      "driftFactor": 0.95,
+      "offroad": 0.45,
+      "torque": 370
     }
   },
   "group_b_monster": {
@@ -235,7 +255,9 @@ export const VEHICLE_ROSTER = {
       "weight": 2.20,
       "steerRate": 1.8,
       "grip": 0.92,
-      "driftFactor": 0.85
+      "driftFactor": 0.85,
+      "offroad": 0.65,
+      "torque": 580
     }
   },
   "monaco_spyder": {
@@ -255,7 +277,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.60,
       "steerRate": 2.5,
       "grip": 0.90,
-      "driftFactor": 0.90
+      "driftFactor": 0.90,
+      "offroad": 0.7,
+      "torque": 490
     }
   },
 
@@ -277,7 +301,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.35,
       "steerRate": 3.1,
       "grip": 0.88,
-      "driftFactor": 0.93
+      "driftFactor": 0.93,
+      "offroad": 0.48,
+      "torque": 420
     }
   },
   "police_enforcer": {
@@ -297,7 +323,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.48,
       "steerRate": 3.2,
       "grip": 0.93,
-      "driftFactor": 0.94
+      "driftFactor": 0.94,
+      "offroad": 0.5,
+      "torque": 450
     }
   },
   "rally_monster": {
@@ -317,7 +345,9 @@ export const VEHICLE_ROSTER = {
       "weight": 1.10,
       "steerRate": 3.6,
       "grip": 0.96,
-      "driftFactor": 0.96
+      "driftFactor": 0.96,
+      "offroad": 0.78,
+      "torque": 510
     }
   },
   "samara_gt": {
@@ -337,7 +367,9 @@ export const VEHICLE_ROSTER = {
       "weight": 0.98,
       "steerRate": 3.8,
       "grip": 0.97,
-      "driftFactor": 0.98
+      "driftFactor": 0.98,
+      "offroad": 0.28,
+      "torque": 390
     }
   }
 };

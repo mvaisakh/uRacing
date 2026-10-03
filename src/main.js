@@ -129,7 +129,7 @@ function initGame() {
     splineSamples = spline.sampleEvenly(12);
     trackRibbon = new TrackRibbon(splineSamples, trackConfig.trackWidth);
     trackBarriers = new TrackBarriers(trackRibbon);
-    surfaceManager = new SurfaceManager(splineSamples, trackConfig.trackWidth / 2);
+    surfaceManager = new SurfaceManager(splineSamples, trackConfig.trackWidth / 2, trackConfig.terrainType || 'asphalt');
     checkpointSystem = new CheckpointSystem(splineSamples, trackConfig.trackWidth / 2, 8);
     propManager = new PropManager(trackConfig.environment);
     minimap = new Minimap(splineSamples, 170);

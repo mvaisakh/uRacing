@@ -42,10 +42,18 @@ export class Car {
     this.forwardVelocity = this.body.velocity.dot(heading);
     this.lateralVelocity = this.body.velocity.dot(right);
 
-    // 1. Throttle / Acceleration Force
+    // 1. Throttle / Acceleration Force (modulates with surface traction & hauling torque)
     if (throttle > 0) {
-      if (this.forwardVelocity < this.spec.stats.topSpeed) {
-        const driveForce = heading.clone().scale(throttle * this.spec.stats.acceleration * this.surfaceGripMultiplier);
+      const topSpeedCap = (this.surfaceType === 'mud' || this.surfaceType === 'dirt')
+        ? this.spec.stats.topSpeed * (0.65 + (this.spec.stats.offroad || 0.5) * 0.35)
+        : this.spec.stats.topSpeed;
+
+      if (this.forwardVelocity < topSpeedCap) {
+        // Torque provides raw pulling force in rough terrain (SUVs power through mud while supercars bog down)
+        const torqueFactor = (this.surfaceType === 'mud' || this.surfaceType === 'dirt')
+          ? ((this.spec.stats.torque || 400) / 450)
+          : 1.0;
+        const driveForce = heading.clone().scale(throttle * this.spec.stats.acceleration * this.surfaceGripMultiplier * torqueFactor);
         this.body.applyForce(driveForce);
       }
     }
