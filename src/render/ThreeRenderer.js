@@ -414,183 +414,190 @@ export class ThreeRenderer {
   }
 
   _addKitchenDecor() {
-    // Ceramic Coffee Mugs with handles
+    // Ceramic Coffee Mugs with handles placed close to the track curves
     const mugMat = new THREE.MeshLambertMaterial({ color: 0xfdfbf7 });
     const coffeeMat = new THREE.MeshLambertMaterial({ color: 0x3d2314 });
-    [[-900, -800], [1300, 600]].forEach(([x, z]) => {
-      const mug = new THREE.Mesh(new THREE.CylinderGeometry(55, 50, 110, 20), mugMat);
-      mug.position.set(x, 55, z);
-      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(51, 51, 6, 20), coffeeMat);
-      liquid.position.set(x, 102, z);
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(32, 8, 8, 16), mugMat);
-      handle.position.set(x + 55, 55, z);
+    [[-450, -220], [620, -120]].forEach(([x, z]) => {
+      const mug = new THREE.Mesh(new THREE.CylinderGeometry(75, 68, 140, 24), mugMat);
+      mug.position.set(x, 70, z);
+      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(68, 68, 8, 24), coffeeMat);
+      liquid.position.set(x, 130, z);
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(42, 12, 10, 20), mugMat);
+      handle.position.set(x + 75, 70, z);
       handle.rotation.y = Math.PI / 2;
       this.scene.add(mug); this.scene.add(liquid); this.scene.add(handle);
       this.trackMeshes.push(mug, liquid, handle);
     });
 
-    // Soda cans with aluminum pull tabs
+    // Soda cans with aluminum pull tabs right on corners
     const canMat = new THREE.MeshLambertMaterial({ color: 0xc0392b });
-    const silverMat = new THREE.MeshLambertMaterial({ color: 0xdcdde1 });
-    [[-1300, 400], [700, -950]].forEach(([x, z]) => {
-      const can = new THREE.Mesh(new THREE.CylinderGeometry(38, 38, 125, 20), canMat);
-      can.position.set(x, 62.5, z);
-      const topRim = new THREE.Mesh(new THREE.CylinderGeometry(36, 38, 10, 20), silverMat);
-      topRim.position.set(x, 120, z);
-      this.scene.add(can); this.scene.add(topRim);
-      this.trackMeshes.push(can, topRim);
+    const silverMat = new THREE.MeshStandardMaterial({ color: 0xdcdde1, metalness: 0.8, roughness: 0.25 });
+    [[-280, 250], [420, 350]].forEach(([x, z]) => {
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(50, 50, 160, 24), canMat);
+      can.position.set(x, 80, z);
+      const topRim = new THREE.Mesh(new THREE.CylinderGeometry(47, 50, 12, 24), silverMat);
+      topRim.position.set(x, 154, z);
+      const tab = new THREE.Mesh(new THREE.BoxGeometry(22, 1.5, 12), silverMat);
+      tab.position.set(x + 10, 161, z);
+      this.scene.add(can); this.scene.add(topRim); this.scene.add(tab);
+      this.trackMeshes.push(can, topRim, tab);
     });
 
-    // Kitchen Cutting Board
-    const board = new THREE.Mesh(new THREE.BoxGeometry(650, 18, 420), new THREE.MeshLambertMaterial({ color: 0xc49a6c }));
-    board.position.set(1600, 9, -1100);
+    // Kitchen Cutting Board near apex turn
+    const board = new THREE.Mesh(new THREE.BoxGeometry(500, 22, 340), new THREE.MeshLambertMaterial({ color: 0xc49a6c }));
+    board.position.set(50, 11, -120);
     this.scene.add(board);
     this.trackMeshes.push(board);
 
-    // Chrome 2-Slice Bread Toaster
+    // Chrome 2-Slice Bread Toaster near chicane turn
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf1f2f6, metalness: 0.85, roughness: 0.2 });
     const blackMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
     const toasterGroup = new THREE.Group();
-    const toasterBody = new THREE.Mesh(new THREE.BoxGeometry(160, 110, 120), chromeMat);
-    toasterBody.position.y = 55;
+    const toasterBody = new THREE.Mesh(new THREE.BoxGeometry(220, 150, 160), chromeMat);
+    toasterBody.position.y = 75;
     toasterGroup.add(toasterBody);
     // Toast slots
-    const slot1 = new THREE.Mesh(new THREE.BoxGeometry(110, 8, 16), blackMat);
-    slot1.position.set(0, 110, -25);
-    const slot2 = new THREE.Mesh(new THREE.BoxGeometry(110, 8, 16), blackMat);
-    slot2.position.set(0, 110, 25);
+    const slot1 = new THREE.Mesh(new THREE.BoxGeometry(150, 10, 22), blackMat);
+    slot1.position.set(0, 150, -35);
+    const slot2 = new THREE.Mesh(new THREE.BoxGeometry(150, 10, 22), blackMat);
+    slot2.position.set(0, 150, 35);
     toasterGroup.add(slot1); toasterGroup.add(slot2);
     // Lever knob
-    const knob = new THREE.Mesh(new THREE.BoxGeometry(16, 12, 10), blackMat);
-    knob.position.set(85, 75, 0);
+    const knob = new THREE.Mesh(new THREE.BoxGeometry(22, 16, 14), blackMat);
+    knob.position.set(115, 100, 0);
     toasterGroup.add(knob);
-    toasterGroup.position.set(-1650, 0, -1250);
-    toasterGroup.rotation.y = 0.25;
+    toasterGroup.position.set(-850, 0, 100);
+    toasterGroup.rotation.y = 0.4;
     this.scene.add(toasterGroup);
     this.trackMeshes.push(toasterGroup);
 
     // Angled Wood Knife Block with Stainless Knife Handles
     const knifeBlockMat = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
     const knifeGroup = new THREE.Group();
-    const blockMesh = new THREE.Mesh(new THREE.BoxGeometry(90, 160, 150), knifeBlockMat);
+    const blockMesh = new THREE.Mesh(new THREE.BoxGeometry(120, 200, 180), knifeBlockMat);
     blockMesh.rotation.x = -0.3;
-    blockMesh.position.set(0, 80, 0);
+    blockMesh.position.set(0, 100, 0);
     knifeGroup.add(blockMesh);
     // 3 Knife handles poking out
     for (let k = -1; k <= 1; k++) {
-      const handle = new THREE.Mesh(new THREE.BoxGeometry(14, 70, 20), blackMat);
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(18, 90, 26), blackMat);
       handle.rotation.x = -0.3;
-      handle.position.set(k * 24, 165, -35);
+      handle.position.set(k * 32, 210, -45);
       knifeGroup.add(handle);
     }
-    knifeGroup.position.set(-1250, 0, -1450);
+    knifeGroup.position.set(-650, 0, -680);
+    knifeGroup.rotation.y = 0.3;
     this.scene.add(knifeGroup);
     this.trackMeshes.push(knifeGroup);
 
     // Cereal / Snack Box diorama prop
     const cerealMat = new THREE.MeshLambertMaterial({ color: 0xe67e22 });
-    const cerealBox = new THREE.Mesh(new THREE.BoxGeometry(140, 240, 60), cerealMat);
-    cerealBox.position.set(1100, 120, -1550);
-    cerealBox.rotation.y = -0.15;
+    const cerealBox = new THREE.Mesh(new THREE.BoxGeometry(180, 300, 80), cerealMat);
+    cerealBox.position.set(700, 150, -650);
+    cerealBox.rotation.y = -0.25;
     this.scene.add(cerealBox);
     this.trackMeshes.push(cerealBox);
   }
 
   _addWorkshopDecor() {
-    // Metal nuts and bolts
-    const metalMat = new THREE.MeshLambertMaterial({ color: 0x8a95a5 });
-    [[900, -800], [-1300, 600], [200, 1400]].forEach(([x, z]) => {
-      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(22, 22, 110, 6), metalMat);
-      bolt.position.set(x, 55, z);
-      const nut = new THREE.Mesh(new THREE.TorusGeometry(38, 14, 6, 6), metalMat);
+    // Metal nuts and bolts on infield corners
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x8a95a5, metalness: 0.85, roughness: 0.3 });
+    [[450, -180], [-350, 220], [150, 480]].forEach(([x, z]) => {
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(28, 28, 140, 6), metalMat);
+      bolt.position.set(x, 70, z);
+      const nut = new THREE.Mesh(new THREE.TorusGeometry(48, 18, 6, 6), metalMat);
       nut.rotation.x = Math.PI / 2;
-      nut.position.set(x, 115, z);
+      nut.position.set(x, 145, z);
       this.scene.add(bolt); this.scene.add(nut);
       this.trackMeshes.push(bolt, nut);
     });
-    // Paint can with handle
+    // Paint can with handle right near apex turn
     const paintMat = new THREE.MeshLambertMaterial({ color: 0xe67e22 });
-    const paint = new THREE.Mesh(new THREE.CylinderGeometry(70, 70, 120, 24), paintMat);
-    paint.position.set(-1500, 60, -700);
+    const paint = new THREE.Mesh(new THREE.CylinderGeometry(85, 85, 150, 24), paintMat);
+    paint.position.set(-550, 75, -250);
     this.scene.add(paint);
     this.trackMeshes.push(paint);
 
     // Red Heavy Steel Toolbox with handle
-    const redMat = new THREE.MeshLambertMaterial({ color: 0xc0392b });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, metalness: 0.4, roughness: 0.4 });
     const darkMat = new THREE.MeshLambertMaterial({ color: 0x1e272e });
-    const toolbox = new THREE.Mesh(new THREE.BoxGeometry(260, 140, 130), redMat);
-    toolbox.position.set(-1600, 70, -1300);
-    const tbHandle = new THREE.Mesh(new THREE.BoxGeometry(90, 20, 14), darkMat);
-    tbHandle.position.set(-1600, 148, -1300);
+    const toolbox = new THREE.Mesh(new THREE.BoxGeometry(320, 170, 160), redMat);
+    toolbox.position.set(650, 85, 200);
+    toolbox.rotation.y = -0.3;
+    const tbHandle = new THREE.Mesh(new THREE.BoxGeometry(110, 25, 18), darkMat);
+    tbHandle.position.set(650, 180, 200);
+    tbHandle.rotation.y = -0.3;
     this.scene.add(toolbox); this.scene.add(tbHandle);
     this.trackMeshes.push(toolbox, tbHandle);
   }
 
   _addGardenDecor() {
-    // Terracotta Flower Pots
+    // Terracotta Flower Pots close to circuit turns
     const terraMat = new THREE.MeshLambertMaterial({ color: 0xc05621 });
     const soilMat = new THREE.MeshLambertMaterial({ color: 0x271c16 });
-    [[-1100, -700], [1300, 800], [-600, 1300]].forEach(([x, z]) => {
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(60, 42, 100, 18), terraMat);
-      pot.position.set(x, 50, z);
-      const soil = new THREE.Mesh(new THREE.CylinderGeometry(56, 56, 10, 18), soilMat);
-      soil.position.set(x, 96, z);
+    [[-450, -220], [550, 150], [-250, 450]].forEach(([x, z]) => {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(80, 56, 130, 20), terraMat);
+      pot.position.set(x, 65, z);
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(75, 75, 12, 20), soilMat);
+      soil.position.set(x, 125, z);
       this.scene.add(pot); this.scene.add(soil);
       this.trackMeshes.push(pot, soil);
     });
-    // River Pebbles
-    const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x718096 });
+    // River Pebbles grouped along turns
+    const pebbleMat = new THREE.MeshLambertMaterial({ color: 0x718096, roughness: 0.8 });
     for (let i = 0; i < 24; i++) {
-      const r = 20 + (i % 5) * 6;
+      const r = 26 + (i % 5) * 8;
       const p = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), pebbleMat);
       p.scale.set(1.4, 0.45, 1.1);
       const angle = (i / 24) * Math.PI * 2;
-      p.position.set(Math.cos(angle) * 1600 + (i % 3) * 100, 8, Math.sin(angle) * 1600 + (i % 4) * 80);
+      p.position.set(Math.cos(angle) * 750 + (i % 3) * 60, 10, Math.sin(angle) * 550 + (i % 4) * 50);
       this.scene.add(p);
       this.trackMeshes.push(p);
     }
   }
 
   _addPlayroomDecor() {
-    // Wooden Toy Building Blocks (cubes & pyramids)
+    // Wooden Toy Building Blocks (cubes & pyramids) placed right in the infield
     const colors = [0xe53e3e, 0x3182ce, 0xd69e2e, 0x38a169];
-    [[-1000, -800], [-850, -800], [1200, 700], [1350, 700], [500, -1300]].forEach(([x, z], idx) => {
+    [[-300, -150], [-180, -150], [250, 200], [380, 200], [0, 320]].forEach(([x, z], idx) => {
       const mat = new THREE.MeshLambertMaterial({ color: colors[idx % colors.length] });
-      const block = new THREE.Mesh(new THREE.BoxGeometry(90, 90, 90), mat);
-      block.position.set(x, 45, z);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(110, 110, 110), mat);
+      block.position.set(x, 55, z);
+      block.rotation.y = idx * 0.2;
       this.scene.add(block);
       this.trackMeshes.push(block);
     });
   }
 
   _addOfficeDecor() {
-    // Pencil cup with colored pencils
+    // Pencil cup with colored pencils on infield
     const cupMat = new THREE.MeshLambertMaterial({ color: 0x2d3748 });
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 110, 20), cupMat);
-    cup.position.set(-1100, 55, -900);
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(55, 55, 140, 24), cupMat);
+    cup.position.set(-350, 70, -180);
     this.scene.add(cup);
     this.trackMeshes.push(cup);
 
-    // Sticky Note Pad stacks
+    // Sticky Note Pad stacks near the track edge
     const padMat = new THREE.MeshLambertMaterial({ color: 0xf6e05e });
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(110, 35, 110), padMat);
-    pad.position.set(1200, 17.5, 600);
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(140, 45, 140), padMat);
+    pad.position.set(450, 22.5, 180);
+    pad.rotation.y = 0.25;
     this.scene.add(pad);
     this.trackMeshes.push(pad);
 
     // Anglepoise Desk Lamp
     const lampMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.3 });
     const lampGroup = new THREE.Group();
-    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(70, 75, 15, 24), lampMat);
-    lampBase.position.y = 7.5;
-    const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 280, 12), lampMat);
-    lampPole.position.set(0, 145, 0);
+    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(90, 95, 20, 24), lampMat);
+    lampBase.position.y = 10;
+    const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 350, 12), lampMat);
+    lampPole.position.set(0, 180, 0);
     lampPole.rotation.z = -0.2;
-    const lampShade = new THREE.Mesh(new THREE.ConeGeometry(55, 65, 24, 1, true), lampMat);
-    lampShade.position.set(45, 285, 0);
+    const lampShade = new THREE.Mesh(new THREE.ConeGeometry(70, 85, 24, 1, true), lampMat);
+    lampShade.position.set(60, 350, 0);
     lampShade.rotation.z = 2.4;
     lampGroup.add(lampBase); lampGroup.add(lampPole); lampGroup.add(lampShade);
-    lampGroup.position.set(-1500, 0, -1400);
+    lampGroup.position.set(-750, 0, -600);
     this.scene.add(lampGroup);
     this.trackMeshes.push(lampGroup);
   }
@@ -598,31 +605,82 @@ export class ThreeRenderer {
   _buildDetailedProp(prop) {
     const group = new THREE.Group();
     const mainMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(prop.color) });
-    const silverMat = new THREE.MeshLambertMaterial({ color: 0xdcdde1 });
-    const darkMat = new THREE.MeshLambertMaterial({ color: 0x2f3640 });
+    const silverMat = new THREE.MeshStandardMaterial({ color: 0xdcdde1, metalness: 0.85, roughness: 0.2 });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x22272e });
+    const whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
     if (prop.type === 'cylinder') {
       const r = prop.radius;
       const h = prop.height3D;
       
-      // Main can/bottle body
-      const bodyGeo = new THREE.CylinderGeometry(r, r, h, 20);
-      const body = new THREE.Mesh(bodyGeo, mainMat);
-      body.position.y = h / 2;
-      group.add(body);
+      // Check if prop is a coffee mug
+      if (prop.id && prop.id.includes('mug')) {
+        // Ceramic cup body with open top & coffee liquid inside
+        const mugOuter = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.88, h, 24), mainMat);
+        mugOuter.position.y = h / 2;
+        group.add(mugOuter);
 
-      // Top silver rim / cap
-      const rimGeo = new THREE.CylinderGeometry(r * 0.94, r, h * 0.08, 20);
-      const rim = new THREE.Mesh(rimGeo, silverMat);
-      rim.position.y = h * 0.96;
-      group.add(rim);
+        const coffeeLiquid = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.88, r * 0.88, 4, 24), new THREE.MeshLambertMaterial({ color: 0x3d2314 }));
+        coffeeLiquid.position.y = h * 0.92;
+        group.add(coffeeLiquid);
 
-      // Bottom rim
-      const botRim = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.92, h * 0.06, 20), silverMat);
-      botRim.position.y = h * 0.03;
-      group.add(botRim);
+        // Curved ceramic handle
+        const handleGeo = new THREE.TorusGeometry(r * 0.5, r * 0.14, 10, 20, Math.PI);
+        const handle = new THREE.Mesh(handleGeo, mainMat);
+        handle.rotation.z = -Math.PI / 2;
+        handle.position.set(r * 0.95, h * 0.5, 0);
+        group.add(handle);
+      } else {
+        // Soda / Juice can or paint container
+        const bodyGeo = new THREE.CylinderGeometry(r, r, h, 24);
+        const body = new THREE.Mesh(bodyGeo, mainMat);
+        body.position.y = h / 2;
+        group.add(body);
+
+        // Top beveled aluminum rim
+        const topRim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r, h * 0.08, 24), silverMat);
+        topRim.position.y = h * 0.96;
+        group.add(topRim);
+
+        // Top lid plate with aluminum pull-tab
+        const lidPlate = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.9, 1.5, 24), silverMat);
+        lidPlate.position.y = h + 0.5;
+        group.add(lidPlate);
+
+        const tabMesh = new THREE.Mesh(new THREE.BoxGeometry(r * 0.4, 1.2, r * 0.22), silverMat);
+        tabMesh.position.set(r * 0.2, h + 1.2, 0);
+        group.add(tabMesh);
+
+        // Bottom rim
+        const botRim = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.9, h * 0.06, 24), silverMat);
+        botRim.position.y = h * 0.03;
+        group.add(botRim);
+
+        // Stylized brand label stripe running around circumference
+        const labelCanvas = document.createElement('canvas');
+        labelCanvas.width = 256; labelCanvas.height = 128;
+        const lctx = labelCanvas.getContext('2d');
+        lctx.fillStyle = prop.color;
+        lctx.fillRect(0, 0, 256, 128);
+        // Bright contrast center band with icon/title
+        lctx.fillStyle = '#ffffff';
+        lctx.fillRect(0, 36, 256, 56);
+        lctx.fillStyle = '#111111';
+        lctx.font = 'bold 36px "Impact", sans-serif';
+        lctx.textAlign = 'center';
+        lctx.textBaseline = 'middle';
+        const labelText = prop.id.includes('cola') ? 'COLA' : (prop.id.includes('spark') ? 'SODA' : (prop.id.includes('paint') ? 'PAINT' : 'BOOST'));
+        lctx.fillText(labelText, 128, 64);
+        const labelTex = new THREE.CanvasTexture(labelCanvas);
+
+        const labelGeo = new THREE.CylinderGeometry(r * 1.015, r * 1.015, h * 0.6, 24, 1, true);
+        const labelMat = new THREE.MeshLambertMaterial({ map: labelTex, transparent: true });
+        const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+        labelMesh.position.y = h * 0.5;
+        group.add(labelMesh);
+      }
     } else {
-      // Box prop: e.g. motor oil, battery pack, sponge, paper ream
+      // Box prop: e.g. motor oil, battery pack, sponge, paper ream, building block
       const w = prop.width;
       const d = prop.height; // depth
       const h = prop.height3D;
@@ -632,11 +690,34 @@ export class ThreeRenderer {
       body.position.y = h / 2;
       group.add(body);
 
-      // Top lid / label accent
-      const lidGeo = new THREE.BoxGeometry(w * 0.96, h * 0.12, d * 0.96);
-      const lid = new THREE.Mesh(lidGeo, darkMat);
-      lid.position.y = h * 0.94;
-      group.add(lid);
+      // Contrast label / lid / details
+      if (prop.id && prop.id.includes('sponge')) {
+        // Dual-layer kitchen scrub sponge (bright yellow cellulose + dark green abrasive pad on top)
+        const scrubPad = new THREE.Mesh(new THREE.BoxGeometry(w + 1, h * 0.35, d + 1), new THREE.MeshLambertMaterial({ color: 0x1b4332 }));
+        scrubPad.position.y = h * 0.85;
+        group.add(scrubPad);
+      } else if (prop.id && prop.id.includes('oil')) {
+        // Motor oil jug with handle neck & twist cap
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.16, w * 0.16, 8, 16), darkMat);
+        cap.position.set(-w * 0.25, h + 4, 0);
+        group.add(cap);
+
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(w * 0.15, h * 0.45, d * 0.3), mainMat);
+        handle.position.set(w * 0.4, h * 0.6, 0);
+        group.add(handle);
+      } else {
+        // Generic desktop box / crate with top lid and front label decal
+        const lidGeo = new THREE.BoxGeometry(w * 0.98, h * 0.14, d * 0.98);
+        const lid = new THREE.Mesh(lidGeo, darkMat);
+        lid.position.y = h * 0.95;
+        group.add(lid);
+
+        // Graphic front badge
+        const badgeGeo = new THREE.PlaneGeometry(w * 0.65, h * 0.45);
+        const badge = new THREE.Mesh(badgeGeo, whiteMat);
+        badge.position.set(0, h * 0.5, d / 2 + 0.5);
+        group.add(badge);
+      }
     }
 
     group.position.set(prop.position.x, 0, prop.position.y);
@@ -1146,37 +1227,37 @@ export class ThreeRenderer {
   _scatterProceduralFlatProps(splineSamples, trackWidth, env) {
     if (!splineSamples || splineSamples.length === 0) return;
 
-    // Pick prop families based on environment
+    // Pick prop families based on environment with enlarged dimensions for crisp readability
     let propPool = [];
     if (env === 'kitchen') {
       propPool = [
-        { type: 'utensil', variants: [0, 1, 2], w: 32, h: 32 },
-        { type: 'vegetable', variants: [0, 1, 2], w: 30, h: 30 },
-        { type: 'pencil', variants: [0, 1], w: 28, h: 28 }
+        { type: 'utensil', variants: [0, 1, 2], w: 46, h: 46 },
+        { type: 'vegetable', variants: [0, 1, 2], w: 44, h: 44 },
+        { type: 'pencil', variants: [0, 1], w: 42, h: 42 }
       ];
     } else if (env === 'workshop') {
       propPool = [
-        { type: 'paint', variants: [0, 1, 2], w: 30, h: 30 },
-        { type: 'pencil', variants: [0, 1, 2], w: 28, h: 28 },
-        { type: 'eraser', variants: [0, 1], w: 26, h: 26 }
+        { type: 'paint', variants: [0, 1, 2], w: 45, h: 45 },
+        { type: 'pencil', variants: [0, 1, 2], w: 42, h: 42 },
+        { type: 'eraser', variants: [0, 1], w: 38, h: 38 }
       ];
     } else if (env === 'playroom') {
       propPool = [
-        { type: 'pencil', variants: [0, 1, 2], w: 30, h: 30 },
-        { type: 'sharpener', variants: [0, 1, 2], w: 26, h: 26 },
-        { type: 'eraser', variants: [0, 1, 2], w: 26, h: 26 }
+        { type: 'pencil', variants: [0, 1, 2], w: 44, h: 44 },
+        { type: 'sharpener', variants: [0, 1, 2], w: 40, h: 40 },
+        { type: 'eraser', variants: [0, 1, 2], w: 38, h: 38 }
       ];
     } else if (env === 'office') {
       propPool = [
-        { type: 'pencil', variants: [0, 1, 2], w: 30, h: 30 },
-        { type: 'eraser', variants: [0, 1, 2], w: 26, h: 26 },
-        { type: 'sharpener', variants: [0, 1, 2], w: 26, h: 26 }
+        { type: 'pencil', variants: [0, 1, 2], w: 44, h: 44 },
+        { type: 'eraser', variants: [0, 1, 2], w: 38, h: 38 },
+        { type: 'sharpener', variants: [0, 1, 2], w: 40, h: 40 }
       ];
     } else { // garden
       propPool = [
-        { type: 'vegetable', variants: [0, 1, 2], w: 32, h: 32 },
-        { type: 'utensil', variants: [0, 1], w: 28, h: 28 },
-        { type: 'pencil', variants: [0, 2], w: 28, h: 28 }
+        { type: 'vegetable', variants: [0, 1, 2], w: 46, h: 46 },
+        { type: 'utensil', variants: [0, 1], w: 42, h: 42 },
+        { type: 'pencil', variants: [0, 2], w: 42, h: 42 }
       ];
     }
 
@@ -1188,8 +1269,8 @@ export class ThreeRenderer {
 
     const halfTrack = trackWidth / 2;
     const numSamples = splineSamples.length;
-    // Step along the spline track in increments of ~4-5 samples
-    const step = 4;
+    // Step along the spline track in increments of ~3 samples for higher continuous density
+    const step = 3;
 
     for (let i = 0; i < numSamples; i += step) {
       const s = splineSamples[i];
@@ -1199,16 +1280,16 @@ export class ThreeRenderer {
       // Scatter on left and right borders of track
       [-1, 1].forEach((side) => {
         const seed = i * 7 + (side > 0 ? 1000 : 2000);
-        // Random probability to spawn: ~65% chance per node for dense Road-Rash feel
-        if (pseudoRand(seed) > 0.65) return;
+        // Random probability to spawn: ~75% chance per node for rich tabletop Road-Rash feel
+        if (pseudoRand(seed) > 0.75) return;
 
-        // Mathematical offset from track border: between +25 and +110 units outward
-        const distOutward = halfTrack + 25 + pseudoRand(seed + 1) * 90;
+        // Place right beside the white barrier curbs (+12 to +48 units outward)
+        const distOutward = halfTrack + 12 + pseudoRand(seed + 1) * 36;
         const posX = p.x + n.x * side * distOutward;
         const posZ = p.y + n.y * side * distOutward;
 
-        // Tangent jitter so items aren't in a rigid straight line
-        const jitterTan = (pseudoRand(seed + 2) - 0.5) * 35;
+        // Tangent jitter so items feel natural and scattered
+        const jitterTan = (pseudoRand(seed + 2) - 0.5) * 22;
         const finalX = posX + s.tangent.x * jitterTan;
         const finalZ = posZ + s.tangent.y * jitterTan;
 
@@ -1239,7 +1320,7 @@ export class ThreeRenderer {
         });
         const sprite = new THREE.Sprite(spriteMat);
         
-        const scale = 0.85 + pseudoRand(seed + 5) * 0.35;
+        const scale = 0.95 + pseudoRand(seed + 5) * 0.35;
         const w = propChoice.w * scale;
         const h = propChoice.h * scale;
         sprite.scale.set(w, h, 1);
