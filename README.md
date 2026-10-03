@@ -2,7 +2,7 @@
 
 A high-octane 3D miniature tabletop racing game channeling the die-cast toy aesthetic and fluid arcade mechanics of classic micro racers.
 
-Built with Three.js WebGL and Vanilla ES Modules, deployable directly to **GitHub Pages** or any static host.
+Built with Three.js WebGL and Vanilla ES Modules, deployable directly to **GitHub Pages** or any static web host.
 
 ---
 
@@ -10,53 +10,56 @@ Built with Three.js WebGL and Vanilla ES Modules, deployable directly to **GitHu
 
 All vehicles are built from authentic low-poly 3D models with unique dimensions, handling kinematics, colorways, and custom accessories:
 
-### 🚗 Sedans & Saloons
-| Vehicle | Class / Style | Top Speed | Weight | Key Dynamic Feature |
-| :--- | :--- | :--- | :--- | :--- |
-| **Bavarian Classic Sedan** | Classic 4-Door Saloon | 430 | Balanced (1.35) | Solid all-around handling, reliable cruising speed |
-| **Tokyo Urban Sedan** | Compact City Saloon | 440 | Light (1.20) | Rapid turn-in, quick stop-and-go acceleration |
-| **Crown Executive Sedan** | Luxury Touring Saloon | 460 | Heavy (1.45) | Long wheelbase, smooth high-speed highway stability |
-| **Metro Yellow Cab** | City Checker Taxi | 435 | Balanced (1.35) | Rooftop taxi sign, responsive stop-and-go torque |
-| **State Police Cruiser** | Highway Pursuit Police | 475 | Sturdy (1.48) | Emergency roof lightbar, high-speed interception tune |
+### ⚡ Flagship Hyper-Muscle
+| Vehicle | Class / Style | Top Speed | Price | Weight | Key Dynamic Feature |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Apex Muscle SS (Camaro)** | American V8 Muscle Coupe | **540** | **3,500** | Balanced (1.20) | High-displacement twin-supercharged V8 delivering peerless top-end velocity and thundering torque. |
 
-### 🏎️ Sports Coupes & Racers
-| Vehicle | Class / Style | Top Speed | Weight | Key Dynamic Feature |
-| :--- | :--- | :--- | :--- | :--- |
-| **Midnight Drift Coupe** | AWD Wedge Aero Sport | 465 | Agile (1.10) | Low-slung profile, tuned for sustained slides |
-| **Apex GT Racer** | Grand Touring Sports | 485 | Ultra-Light (1.05) | Wide stance, razor agility, and blistering acceleration |
-| **Clubman Speedster** | Super-Low Wedge Sport | 475 | Featherweight (1.02) | Ultra-low drag, technical cornering apex speed |
-| **Baja Storm Rally GT** | Desert Rally Spec | 465 | Balanced (1.10) | High-downforce rear rally wing, sharp slide recovery |
-| **Monaco Aero GT** | Featherweight Track Spec | 495 | Ultra-Light (0.98) | Full competition rear GT wing, extreme downforce |
+### 🏎️ Sports Coupes & Competition Racers
+| Vehicle | Class / Style | Top Speed | Price | Weight | Key Dynamic Feature |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Monaco Aero GT** | Featherweight Track Spec | 495 | 3,000 | Ultra-Light (0.98) | Competition GT fitted with carbon rear wing, extreme downforce, and razor cornering grip. |
+| **Apex GT Racer** | Grand Touring Sports | 485 | 1,400 | Ultra-Light (1.05) | Track-ready competition GT with wide stance, razor agility, and blistering acceleration. |
+| **Clubman Speedster** | Super-Low Wedge Sport | 475 | 1,750 | Featherweight (1.02) | Ultra-low drag competition wedge built for technical cornering and high apex speed. |
+| **Baja Storm Rally GT** | Desert Rally Spec Coupe | 465 | 2,300 | Agile (1.10) | Coupe-based rally machine with high-downforce rear wing and ultra-responsive slide recovery. |
+| **Midnight Drift Coupe** | AWD Wedge Aero Sport | 465 | 1,100 | Agile (1.10) | Low-slung sports coupe with aerodynamic profile, tuned for sustained high-speed drifts. |
 
-### 🚐 Commercial Utility Vans
-| Vehicle | Class / Style | Top Speed | Weight | Key Dynamic Feature |
-| :--- | :--- | :--- | :--- | :--- |
-| **Metro Delivery Van** | Urban Commercial Van | 420 | Heavy (1.70) | High-roof steel chassis, high pushing momentum |
-| **Express Cargo Van** | Commercial Panel Van | 425 | Heavy (1.65) | Heavy-duty utility transport, strong pulling torque |
-| **Rapid Service Van** | Emergency Service Van | 435 | Heavy (1.75) | High-clearance fleet van, stable highway tracking |
+### 🚗 Sedans, Saloons & Classics
+| Vehicle | Class / Style | Top Speed | Price | Weight | Key Dynamic Feature |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **State Police Cruiser** | Highway Pursuit Police Sedan | 475 | 1,600 | Sturdy (1.48) | Highway patrol cruiser fitted with emergency roof lightbar and high-speed pursuit tune. |
+| **Crown Executive Sedan** | Luxury Touring Saloon | 460 | 850 | Heavy (1.45) | Long-wheelbase luxury sedan with smooth high-speed highway stability and power. |
+| **Tokyo Urban Sedan** | Compact City Saloon | 440 | 400 | Light (1.20) | Agile 4-door street sedan with quick turn-in, rapid acceleration, and tight handling. |
+| **Anglia Vintage Racer** | Classic English Notchback | 440 | 1,200 | Light (1.05) | Charming retro saloon with reverse-raked rear glass and nimble technical cornering. |
+| **Metro Yellow Cab** | City Checker Taxi Sedan | 435 | 600 | Balanced (1.35) | Classic yellow city cab with illuminated rooftop taxi sign and quick stop-and-go burst. |
+| **Bavarian Classic Sedan** | Classic 4-Door Saloon | 430 | Free | Balanced (1.35) | Solid mid-size saloon with balanced handling, good top speed, and starter reliability. |
 
-### 🚌 City Transit & Coach Buses
-| Vehicle | Class / Style | Top Speed | Weight | Key Dynamic Feature |
-| :--- | :--- | :--- | :--- | :--- |
-| **Metro Transit Bus** | City Commuter Transit Bus | 405 | Massive (2.10) | Massive multi-passenger bus, sweeps opponents aside |
-| **Continental Coach Bus** | Long-Distance Touring Coach | 425 | Massive (2.20) | Long touring coach, unstoppable highway momentum |
-| **Express Shuttle Bus** | Airport Express Shuttle | 415 | Massive (2.05) | Iron fortress chassis, high ramming resistance |
+### 🚙 4x4, Hauler & Commercial Utility
+| Vehicle | Class / Style | Top Speed | Price | Weight | Key Dynamic Feature |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Overland 4x4 (Fortuner)** | Heavy Adventure 4WD SUV | 445 | 1,050 | Heavy (1.65) | High-riding rugged all-terrain SUV engineered with high ground clearance and rock-steady stability. |
+| **Express Service Van** | Fleet Utility Van | 435 | 1,600 | Heavy (1.60) | Reinforced delivery van with high pushing power and durable commercial suspension. |
+| **Titan 6x6 Military Hauler** | Heavy Armored Tactical Hauler | 430 | 1,400 | Massive (2.25) | Massive military cargo transport with indestructible chassis, towering wheelbase, and relentless ramming force. |
+| **Continental Coach Bus** | Long-Distance Touring Coach | 425 | 1,850 | Massive (2.20) | Long touring coach with unstoppable highway momentum and rock-solid high-speed stability. |
 
 ---
 
-## 🏁 Miniature Diorama Circuits
+## 🏁 Miniature Diorama Circuits (8 Tracks)
 
 1. **Kitchen Countertop GP** - Race across varnished oak countertops between soda cans, coffee mugs, and cooking utensils.
 2. **Workshop Workbench Derby** - Drift through a carpenter's workshop around paint cans, motor oil canisters, and bolts.
-3. **Garden Path Sprint** - Outdoor garden course weaving past terracotta flower pots, trowels, and scattered vegetables.
-4. **Kids Bedroom Raceway** - Nursery carpet track bordered by giant building blocks, toy trains, and crayons.
-5. **Dining Table Speed Bowl** - Oval speedway on a grand dining table lined with dinner plates, silverware, and condiment shakers.
-6. **Study Desk Circuit** - Technical circuit navigating around spiral notebooks, coffee cups, giant pencils, and erasers.
+3. **Garden Patio Sprint** - Outdoor patio garden course weaving past terracotta flower pots, river stone clusters, and garden vegetables.
+4. **Playroom Carpet Speedway** - Nursery carpet track bordered by giant wooden building blocks, crayons, and toys.
+5. **Breakfast Table Oval** - High-speed banked oval circuit on a dining table lined with tableware and breakfast items.
+6. **Architect Desk Loop** - Technical drafting circuit navigating around anglepoise lamps, sticky note stacks, pencil cups, and sharpeners.
+7. **μRacing 360 Inversion Speedway** - High-stakes stunt track featuring a **full vertical 360° inversion loop** with neon pre-boost acceleration strip.
+8. **μRacing Skyway & Canyon Jump** - Elevated industrial skyway bridge with kicker launch ramp spanning a **deep canyon gap**, equipped with auto-boost recovery on missed jumps.
 
 ---
 
-## 🎮 Controls
+## 🎮 Controls & Interface
 
+### ⌨️ Keyboard & Desktop
 * **Accelerate:** `W` or `Up Arrow`
 * **Brake / Reverse:** `S` or `Down Arrow`
 * **Steer:** `A` / `D` or `Left` / `Right Arrow`
@@ -64,15 +67,21 @@ All vehicles are built from authentic low-poly 3D models with unique dimensions,
 * **Nitrous Boost:** `Shift`
 * **Quick Restart:** `R`
 * **Garage / Showroom:** `Escape`
-* **Cycle Garage Cars:** `A` / `D` or `Left` / `Right Arrow`
-* **Confirm Selection:** `Enter`
+* **Showroom Carousel:** `A` / `D` or `Left` / `Right Arrow` (or click carousel buttons / node pills)
+* **Confirm / Buy / Start Race:** `Enter`
+
+### 📱 Touch & Mobile Friendly
+* **On-Screen Virtual Controls:** Virtual steering wheel / buttons, responsive throttle, brake, drift, and boost buttons.
+* **Touch-Enabled UI:** Clickable and touch-navigable showroom cards, carousel chevrons, track selector cards, and action buttons.
 
 ---
 
-## ⚙️ Visuals & Physics Engine
+## ⚙️ Physics, AI & Engine Features
 
-* **3D Seamless Ribbon Track:** Closed-loop ribbon geometry with zero Frenet twist or start-finish seam discontinuity.
-* **Studio Garage Showroom:** 3-point studio lighting with PCF soft shadow mapping and rotating showcase turntable.
-* **Responsive 3D Particles:** Billowy 3D tire drift smoke puffs and real-time fading rubber skidmark ribbons.
+* **3D Seamless Ribbon Track:** Closed-loop ribbon geometry with continuous Frenet frames, start-finish checker gantries, and zero mesh seam discontinuity.
+* **Inversion Stunts & Gap Jumps:** Loop physics with centrifugal adhesion, pre-boost pads, and safety recovery checkpoints with auto-boost respawn.
+* **Smart AI Drivers:** Multi-vehicle peer-separation steering, stuck detection with auto-reverse maneuvers, dynamic slipstreaming, and race line adaptation.
+* **Studio Garage Showroom:** 3-point studio lighting, PCF soft shadow mapping, rotating showcase turntable, and LED stat gauges calibrated for all vehicle tiers.
+* **Responsive 3D Particles:** Volumetric drift smoke puffs, ground-projected tire skidmarks, and collision spark bursts.
 * **Capsule Car Collisions:** 2-circle capsule collision detection preventing clipping with momentum separation and angular torque transfer.
-* **Web Audio Sound Synthesizer:** Real-time FM engine revs, dynamic drift tire screech, and die-cast metal impact crashes.
+* **Web Audio Sound Synthesizer:** Real-time FM engine revs, dynamic drift tire screech, nitrous whoosh, and die-cast metal impact crashes.
