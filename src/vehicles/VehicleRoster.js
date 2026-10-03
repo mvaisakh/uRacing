@@ -140,20 +140,20 @@ export const VEHICLE_ROSTER = {
     "id": "maranello_rosso",
     "name": "Apex Muscle SS (Camaro)",
     "era": "American V8 Muscle Coupe",
-    "description": "Aggressive low-poly V8 muscle car with racing stripes, thundering torque, and high-speed drift control.",
+    "description": "The ultimate flagship hyper-muscle machine. High-displacement twin-supercharged V8 delivering peerless top-end velocity and thundering torque.",
     "modelId": "camaro_muscle",
-    "cost": 850,
+    "cost": 3500,
     "color": "#1e3799",
     "accentColor": "#ffffff",
     "stripeColor": "#ffffff",
     "stats": {
-      "topSpeed": 470,
-      "acceleration": 510,
-      "braking": 510,
-      "weight": 1.25,
-      "steerRate": 3.4,
-      "grip": 0.93,
-      "driftFactor": 0.96
+      "topSpeed": 540,
+      "acceleration": 560,
+      "braking": 580,
+      "weight": 1.20,
+      "steerRate": 3.7,
+      "grip": 0.96,
+      "driftFactor": 0.98
     }
   },
   "metro_cruiser": {

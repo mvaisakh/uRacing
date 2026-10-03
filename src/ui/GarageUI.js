@@ -250,8 +250,8 @@ export class GarageUI {
     const gaugeStep = 32;
 
     const stats = current.stats;
-    const topSpeedNorm = (stats.topSpeed - 380) / 130;
-    const accelNorm = (stats.acceleration - 340) / 200;
+    const topSpeedNorm = (stats.topSpeed - 380) / 160;
+    const accelNorm = (stats.acceleration - 340) / 230;
     const steerNorm = (stats.steerRate - 1.6) / 2.4;
     const gripNorm = (stats.grip - 0.8) / 0.2;
 
