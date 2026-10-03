@@ -53,7 +53,7 @@ export class ThreeRenderer {
 
     // Dedicated Garage Studio Lighting Group
     this.garageLights = new THREE.Group();
-    const garageKey = new THREE.DirectionalLight(0xfff5ea, 1.25);
+    const garageKey = new THREE.DirectionalLight(0xfff5ea, 1.35);
     garageKey.position.set(50, 75, 60);
     garageKey.castShadow = true;
     garageKey.shadow.mapSize.width = 1024;
@@ -67,16 +67,17 @@ export class ThreeRenderer {
     garageKey.shadow.bias = -0.0005;
     this.garageLights.add(garageKey);
 
-    const garageFill = new THREE.DirectionalLight(0x9fc5e8, 0.7);
+    const garageFill = new THREE.DirectionalLight(0xc2ddf7, 0.85);
     garageFill.position.set(-60, 45, 30);
     this.garageLights.add(garageFill);
 
-    const garageRim = new THREE.DirectionalLight(0xffffff, 0.95);
+    const garageRim = new THREE.DirectionalLight(0xffffff, 1.1);
     garageRim.position.set(0, 50, -60);
     this.garageLights.add(garageRim);
 
-    const garageSpot = new THREE.PointLight(0x00f2fe, 1.2, 80);
-    garageSpot.position.set(0, 3, 0);
+    // Soft subtle cyan accent underglow around turntable base (toned down from 1.2 to 0.25)
+    const garageSpot = new THREE.PointLight(0x00f2fe, 0.25, 60);
+    garageSpot.position.set(0, 0.5, 0);
     this.garageLights.add(garageSpot);
 
     this.garageLights.visible = false;
@@ -466,7 +467,7 @@ export class ThreeRenderer {
     toasterGroup.position.set(-1650, 0, -1250);
     toasterGroup.rotation.y = 0.25;
     this.scene.add(toasterGroup);
-    this.trackMeshes.push(toasterBody, slot1, slot2, knob);
+    this.trackMeshes.push(toasterGroup);
 
     // Angled Wood Knife Block with Stainless Knife Handles
     const knifeBlockMat = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
@@ -481,11 +482,10 @@ export class ThreeRenderer {
       handle.rotation.x = -0.3;
       handle.position.set(k * 24, 165, -35);
       knifeGroup.add(handle);
-      this.trackMeshes.push(handle);
     }
     knifeGroup.position.set(-1250, 0, -1450);
     this.scene.add(knifeGroup);
-    this.trackMeshes.push(blockMesh);
+    this.trackMeshes.push(knifeGroup);
 
     // Cereal / Snack Box diorama prop
     const cerealMat = new THREE.MeshLambertMaterial({ color: 0xe67e22 });
@@ -592,7 +592,7 @@ export class ThreeRenderer {
     lampGroup.add(lampBase); lampGroup.add(lampPole); lampGroup.add(lampShade);
     lampGroup.position.set(-1500, 0, -1400);
     this.scene.add(lampGroup);
-    this.trackMeshes.push(lampBase, lampPole, lampShade);
+    this.trackMeshes.push(lampGroup);
   }
 
   _buildDetailedProp(prop) {
