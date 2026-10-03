@@ -40,21 +40,50 @@ export class TrackSelectUI {
 
       // Trackmania elevation function matching ThreeRenderer
       const trackBaseY = 3;
-      const elevFn = (p) => {
-        const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
-        if (p < 0.10) return trackBaseY;
-        if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; }
-        if (p < 0.28) return trackBaseY + 20;
-        if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; }
-        if (p < 0.40) return trackBaseY + 50;
-        if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; }
-        if (p < 0.55) return trackBaseY - 5;
-        if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; }
-        if (p < 0.68) return trackBaseY + 30;
-        if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; }
-        if (p < 0.90) return trackBaseY;
-        return trackBaseY;
-      };
+      let elevFn;
+      if (track.id === 'uracing_inversion_loop') {
+        elevFn = (p) => {
+          const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+          if (p < 0.26) return trackBaseY;
+          if (p >= 0.26 && p <= 0.44) {
+            const prog = (p - 0.26) / 0.18;
+            return trackBaseY + Math.sin(prog * Math.PI) * 190;
+          }
+          if (p < 0.52) return trackBaseY;
+          if (p < 0.65) { const t = (p - 0.52) / 0.13; return trackBaseY + ease(t) * 45; }
+          if (p < 0.78) { const t = (p - 0.65) / 0.13; return trackBaseY + 45 - ease(t) * 45; }
+          return trackBaseY;
+        };
+      } else if (track.id === 'twin_bridge_skyway') {
+        elevFn = (p) => {
+          const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+          if (p < 0.12) return trackBaseY;
+          if (p < 0.25) { const t = (p - 0.12) / 0.13; return trackBaseY + ease(t) * 95; }
+          if (p < 0.35) return trackBaseY + 95;
+          if (p < 0.38) { const t = (p - 0.35) / 0.03; return trackBaseY + 95 + ease(t) * 20; }
+          if (p < 0.48) return -80;
+          if (p < 0.52) { const t = (p - 0.48) / 0.04; return trackBaseY + 70 - ease(t) * 25; }
+          if (p < 0.68) return trackBaseY + 45;
+          if (p < 0.82) { const t = (p - 0.68) / 0.14; return trackBaseY + 45 - ease(t) * 45; }
+          return trackBaseY;
+        };
+      } else {
+        elevFn = (p) => {
+          const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+          if (p < 0.10) return trackBaseY;
+          if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; }
+          if (p < 0.28) return trackBaseY + 20;
+          if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; }
+          if (p < 0.40) return trackBaseY + 50;
+          if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; }
+          if (p < 0.55) return trackBaseY - 5;
+          if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; }
+          if (p < 0.68) return trackBaseY + 30;
+          if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; }
+          if (p < 0.90) return trackBaseY;
+          return trackBaseY;
+        };
+      }
 
       // Compute approximate total length in meters (scaled for die-cast micro toys)
       let lengthSum = 0;

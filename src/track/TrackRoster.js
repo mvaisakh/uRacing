@@ -319,5 +319,70 @@ export const TRACK_ROSTER = {
         "y": -300
       }
     ]
+  },
+  "uracing_inversion_loop": {
+    "id": "uracing_inversion_loop",
+    "name": "μRacing 360 Inversion Speedway",
+    "environment": "playroom",
+    "bgColor": "#2c3e50",
+    "laps": 3,
+    "trackWidth": 140,
+    "hasLoop": true,
+    "loopSection": {
+      "pStart": 0.28,
+      "pEnd": 0.44,
+      "boostStart": 0.22,
+      "boostEnd": 0.27
+    },
+    "startPosition": {
+      "x": -550,
+      "y": -400
+    },
+    "startAngle": 0,
+    "waypoints": [
+      { "x": -550, "y": -400 },
+      { "x": -100, "y": -400 },
+      { "x": 200, "y": -400 },
+      { "x": 600, "y": -400 },
+      { "x": 900, "y": -150 },
+      { "x": 800, "y": 250 },
+      { "x": 400, "y": 500 },
+      { "x": -100, "y": 450 },
+      { "x": -500, "y": 300 },
+      { "x": -750, "y": 0 },
+      { "x": -700, "y": -300 }
+    ]
+  },
+  "twin_bridge_skyway": {
+    "id": "twin_bridge_skyway",
+    "name": "μRacing Skyway & Canyon Jump",
+    "environment": "workshop",
+    "bgColor": "#34495e",
+    "laps": 3,
+    "trackWidth": 145,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
+    "startPosition": {
+      "x": -450,
+      "y": -450
+    },
+    "startAngle": 0,
+    "waypoints": [
+      { "x": -450, "y": -450 },
+      { "x": 100, "y": -450 },
+      { "x": 650, "y": -450 },
+      { "x": 900, "y": -200 },
+      { "x": 850, "y": 200 },
+      { "x": 500, "y": 550 },
+      { "x": 0, "y": 550 },
+      { "x": -450, "y": 400 },
+      { "x": -800, "y": 150 },
+      { "x": -850, "y": -200 }
+    ]
   }
 };

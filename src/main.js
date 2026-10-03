@@ -307,6 +307,65 @@ function initGame() {
         ai.update(aiControls, dt);
       }
 
+      // Boost Zones & Jump Mechanics
+      const handleSpecialTrackZones = (car, isPlayer = false) => {
+        if (!trackConfig.hasLoop && !trackConfig.hasJump) return;
+
+        // Find progress along spline
+        let closestDist = Infinity;
+        let closestIdx = 0;
+        const cpos = car.body.position;
+        for (let i = 0; i < splineSamples.length; i++) {
+          const d = cpos.distanceTo(splineSamples[i].point);
+          if (d < closestDist) {
+            closestDist = d;
+            closestIdx = i;
+          }
+        }
+        const p = closestIdx / splineSamples.length;
+
+        // 1. Loop Pre-Boost & Ramp Boost Zones
+        let inBoostZone = false;
+        if (trackConfig.hasJump && p >= 0.30 && p <= 0.36) {
+          inBoostZone = true;
+        } else if (trackConfig.loopSection && p >= trackConfig.loopSection.boostStart && p <= trackConfig.loopSection.boostEnd) {
+          inBoostZone = true;
+        }
+
+        if (inBoostZone) {
+          const heading = Vec2.fromAngle(car.body.angle);
+          car.body.applyForce(heading.scale(car.spec.stats.acceleration * 2.2));
+          if (isPlayer && sounds && sounds.playNitroWhoosh) {
+            // Slight rumble / boost sensation
+            cameraShake.addTrauma(0.04);
+          }
+        }
+
+        // 2. Canyon Jump Fail Detection & Auto-Respawn with Boost
+        if (trackConfig.hasJump && p >= 0.38 && p <= 0.48) {
+          // If car is off-track or under-speeded into the gap, respawn before jump with auto boost
+          if (closestDist > trackConfig.trackWidth * 0.9 || car.forwardVelocity < 180) {
+            const respawnIdx = Math.floor((trackConfig.jumpSection.respawnSample || 0.30) * splineSamples.length);
+            const respawnS = splineSamples[respawnIdx];
+            const respawnAngle = respawnS.tangent.angle();
+            car.reset(respawnS.point.x, respawnS.point.y, respawnAngle);
+            // Give instant boost charge so it launches successfully across the jump
+            car.forwardVelocity = car.spec.stats.topSpeed * 1.05;
+            const boostHeading = Vec2.fromAngle(respawnAngle);
+            car.body.velocity = boostHeading.clone().scale(car.forwardVelocity);
+            if (isPlayer) {
+              sfx.playNitroWhoosh();
+              cameraShake.addTrauma(0.4);
+            }
+          }
+        }
+      };
+
+      handleSpecialTrackZones(playerCar, true);
+      for (const ai of aiCars) {
+        handleSpecialTrackZones(ai, false);
+      }
+
       // Collisions: Barriers
       for (const barrier of trackBarriers.getBarriers()) {
         if (CollisionSystem.resolveCarBarrier(playerCar, barrier)) {

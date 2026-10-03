@@ -777,24 +777,55 @@ export class ThreeRenderer {
     const trackBaseY = 3;
     const totalLen = splineSamples.length;
 
-    // Trackmania-style elevation profile — smooth sin() easing between sections.
-    const elevFn = (p) => {
+    // Track elevation profile — custom per track for standard circuits, 360 inversion loop, and canyon bridge jumps
+    let elevFn;
+    if (trackConfig.id === 'uracing_inversion_loop') {
+      // 360 Loop Track: flat start, pre-boost run, massive loop peaking at Y=220, smooth landing run
+      elevFn = (p) => {
         const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
-
-        if (p < 0.10)                    return trackBaseY;                        // flat start straight
-        if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; } // rise
-        if (p < 0.28)                    return trackBaseY + 20;                   // elevated plateau
-        if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; } // launch ramp
-        if (p < 0.40)                    return trackBaseY + 50;                   // ramp lip (airtime zone)
-        if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; } // drop
-        if (p < 0.55)                    return trackBaseY - 5;                    // valley floor
-        if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; } // second ramp
-        if (p < 0.68)                    return trackBaseY + 30;                   // second peak
-        if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; } // descent
-        if (p < 0.90)                    return trackBaseY;                        // flat approach
-        if (p < 1.00) { const t = (p - 0.90) / 0.10; return trackBaseY; }        // smooth close
+        if (p < 0.26) return trackBaseY;
+        if (p >= 0.26 && p <= 0.44) {
+          // Loop crest & roll
+          const prog = (p - 0.26) / 0.18;
+          return trackBaseY + Math.sin(prog * Math.PI) * 190;
+        }
+        if (p < 0.52) return trackBaseY;
+        if (p < 0.65) { const t = (p - 0.52) / 0.13; return trackBaseY + ease(t) * 45; }
+        if (p < 0.78) { const t = (p - 0.65) / 0.13; return trackBaseY + 45 - ease(t) * 45; }
         return trackBaseY;
-    };
+      };
+    } else if (trackConfig.id === 'twin_bridge_skyway') {
+      // Twin Bridge & Canyon Jump: elevated bridge span, canyon jump gap at p=0.38-0.46, ramp landing
+      elevFn = (p) => {
+        const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+        if (p < 0.12) return trackBaseY;
+        if (p < 0.25) { const t = (p - 0.12) / 0.13; return trackBaseY + ease(t) * 95; } // Bridge climb
+        if (p < 0.35) return trackBaseY + 95; // High Skyway bridge
+        if (p < 0.38) { const t = (p - 0.35) / 0.03; return trackBaseY + 95 + ease(t) * 20; } // Jump ramp kicker
+        if (p < 0.48) return -80; // Deep Canyon Gap below track! Missing floor creates huge airtime jump
+        if (p < 0.52) { const t = (p - 0.48) / 0.04; return trackBaseY + 70 - ease(t) * 25; } // Landing ramp
+        if (p < 0.68) return trackBaseY + 45;
+        if (p < 0.82) { const t = (p - 0.68) / 0.14; return trackBaseY + 45 - ease(t) * 45; } // Descent
+        return trackBaseY;
+      };
+    } else {
+      // Standard dynamic undulating tabletop terrain
+      elevFn = (p) => {
+        const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+        if (p < 0.10) return trackBaseY;
+        if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; }
+        if (p < 0.28) return trackBaseY + 20;
+        if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; }
+        if (p < 0.40) return trackBaseY + 50;
+        if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; }
+        if (p < 0.55) return trackBaseY - 5;
+        if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; }
+        if (p < 0.68) return trackBaseY + 30;
+        if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; }
+        if (p < 0.90) return trackBaseY;
+        return trackBaseY;
+      };
+    }
 
     const trackWidth = trackConfig.trackWidth || 140;
     const { trackGeom, leftGeom, rightGeom } = this._buildTrackRibbon(splineSamples, trackWidth, elevFn);
@@ -828,6 +859,16 @@ export class ThreeRenderer {
 
     // Start / Finish Line Ground Markings & Overhead Gantry Arch
     this._buildStartFinishArch(splineSamples, trackWidth, elevFn);
+
+    // Speed Boost Pads & Neon Chevrons for Inversion Loops & Jump Kicker Ramps
+    if (trackConfig.hasLoop || trackConfig.hasJump) {
+      this._buildSpeedBoostPads(splineSamples, trackConfig, trackWidth, elevFn);
+    }
+
+    // Bridge Trusses & Suspension Pillars for Skyway
+    if (trackConfig.id === 'twin_bridge_skyway') {
+      this._buildBridgePillars(splineSamples, trackWidth, elevFn);
+    }
 
     // Procedural Road-Rash style dense roadside item scattering (pencils, erasers, sharpeners, paints, utensils, vegetables)
     this._scatterProceduralFlatProps(splineSamples, trackWidth, trackConfig.environment || 'kitchen');
@@ -1002,6 +1043,104 @@ export class ThreeRenderer {
 
     this.scene.add(archGroup);
     this.trackMeshes.push(archGroup);
+  }
+
+  _buildSpeedBoostPads(splineSamples, trackConfig, trackWidth, elevFn) {
+    const N = splineSamples.length;
+    let boostRange = [0.22, 0.27];
+    if (trackConfig.hasJump) {
+      boostRange = [0.31, 0.36];
+    } else if (trackConfig.loopSection) {
+      boostRange = [trackConfig.loopSection.boostStart, trackConfig.loopSection.boostEnd];
+    }
+
+    const startIdx = Math.floor(boostRange[0] * N);
+    const endIdx = Math.floor(boostRange[1] * N);
+
+    // Neon Chevron Boost Texture
+    const bCanvas = document.createElement('canvas');
+    bCanvas.width = 128;
+    bCanvas.height = 128;
+    const bctx = bCanvas.getContext('2d');
+    bctx.fillStyle = '#111122';
+    bctx.fillRect(0, 0, 128, 128);
+    // Yellow/Cyan glowing chevrons pointing forward
+    bctx.fillStyle = '#00f2fe';
+    bctx.shadowColor = '#00f2fe';
+    bctx.shadowBlur = 12;
+    for (let i = 0; i < 3; i++) {
+      const y = 30 + i * 36;
+      bctx.beginPath();
+      bctx.moveTo(20, y + 20);
+      bctx.lineTo(64, y - 10);
+      bctx.lineTo(108, y + 20);
+      bctx.lineTo(64, y + 6);
+      bctx.closePath();
+      bctx.fill();
+    }
+    const boostTex = new THREE.CanvasTexture(bCanvas);
+    boostTex.wrapS = THREE.RepeatWrapping;
+    boostTex.wrapT = THREE.RepeatWrapping;
+
+    const boostMat = new THREE.MeshBasicMaterial({
+      map: boostTex,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -3
+    });
+
+    for (let i = startIdx; i <= endIdx; i += 2) {
+      const s = splineSamples[i % N];
+      const p = (i % N) / N;
+      const y = elevFn(p);
+      const angle = Math.atan2(s.tangent.y, s.tangent.x);
+
+      const padGeo = new THREE.PlaneGeometry(trackWidth * 0.9, 18);
+      const padMesh = new THREE.Mesh(padGeo, boostMat);
+      padMesh.rotation.x = -Math.PI / 2;
+      padMesh.position.set(s.point.x, y + 0.6, s.point.y);
+      padMesh.rotation.z = -angle + Math.PI / 2;
+
+      this.scene.add(padMesh);
+      this.trackMeshes.push(padMesh);
+    }
+  }
+
+  _buildBridgePillars(splineSamples, trackWidth, elevFn) {
+    const N = splineSamples.length;
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, metalness: 0.8, roughness: 0.3 });
+    const cableMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c, metalness: 0.5, roughness: 0.4 });
+    const halfW = trackWidth / 2;
+
+    // Bridge piers placed along elevated bridge section (p=0.15 to 0.37 and 0.49 to 0.65)
+    const pierPs = [0.16, 0.22, 0.28, 0.34, 0.52, 0.58, 0.64];
+    for (const bp of pierPs) {
+      const idx = Math.floor(bp * N);
+      const s = splineSamples[idx];
+      const y = elevFn(bp);
+      if (y < 20) continue;
+
+      // Heavy Concrete / Steel support tower
+      const colGeo = new THREE.BoxGeometry(18, y, 18);
+      const colMesh = new THREE.Mesh(colGeo, pillarMat);
+      colMesh.position.set(s.point.x, y / 2, s.point.y);
+      colMesh.castShadow = true;
+      this.scene.add(colMesh);
+      this.trackMeshes.push(colMesh);
+
+      // Suspension cable towers on both sides
+      [-1, 1].forEach((side) => {
+        const sideX = s.point.x + s.normal.x * (halfW + 8) * side;
+        const sideZ = s.point.y + s.normal.y * (halfW + 8) * side;
+        const towerGeo = new THREE.CylinderGeometry(3.5, 5, 80, 12);
+        const tower = new THREE.Mesh(towerGeo, cableMat);
+        tower.position.set(sideX, y + 40, sideZ);
+        tower.castShadow = true;
+        this.scene.add(tower);
+        this.trackMeshes.push(tower);
+      });
+    }
   }
 
   _scatterProceduralFlatProps(splineSamples, trackWidth, env) {
