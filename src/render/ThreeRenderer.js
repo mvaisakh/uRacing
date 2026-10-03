@@ -1191,7 +1191,12 @@ export class ThreeRenderer {
 
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.Float32BufferAttribute(modelData.mesh.positions, 3));
-    geom.setAttribute('uv', new THREE.Float32BufferAttribute(modelData.mesh.uvs, 2));
+    if (modelData.mesh.uvs && modelData.mesh.uvs.length > 0) {
+      geom.setAttribute('uv', new THREE.Float32BufferAttribute(modelData.mesh.uvs, 2));
+    }
+    if (modelData.mesh.colors && modelData.mesh.colors.length > 0) {
+      geom.setAttribute('color', new THREE.Float32BufferAttribute(modelData.mesh.colors, 3));
+    }
     if (modelData.mesh.normals && modelData.mesh.normals.length > 0) {
       geom.setAttribute('normal', new THREE.Float32BufferAttribute(modelData.mesh.normals, 3));
     } else {
@@ -1231,14 +1236,15 @@ export class ThreeRenderer {
     const modelId = car.spec.modelId;
 
     if (modelId && CAR_MODELS_DATA[modelId]) {
-      // Load and render low poly car mesh extracted from game archives
+      // Load and render low poly car mesh extracted from game archives or Blender
       const geom = this._getModelGeometry(modelId);
       const texture = this._getModelTexture(modelId);
+      const hasVertexColors = !!(CAR_MODELS_DATA[modelId].mesh.colors && CAR_MODELS_DATA[modelId].mesh.colors.length > 0);
       
-      // Use neutral white when diffuse texture map is provided so windows, grills, lights, and livery are pristine
       const mat = new THREE.MeshStandardMaterial({
         map: texture,
-        color: texture ? 0xffffff : new THREE.Color(car.spec.color || 0xffffff),
+        vertexColors: hasVertexColors && !texture,
+        color: texture || hasVertexColors ? 0xffffff : new THREE.Color(car.spec.color || 0xffffff),
         roughness: 0.35,
         metalness: 0.25
       });
