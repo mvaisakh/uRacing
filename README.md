@@ -85,3 +85,16 @@ All vehicles are built from authentic low-poly 3D models with unique dimensions,
 * **Responsive 3D Particles:** Volumetric drift smoke puffs, ground-projected tire skidmarks, and collision spark bursts.
 * **Capsule Car Collisions:** 2-circle capsule collision detection preventing clipping with momentum separation and angular torque transfer.
 * **Web Audio Sound Synthesizer:** Real-time FM engine revs, dynamic drift tire screech, nitrous whoosh, and die-cast metal impact crashes.
+
+---
+
+## 📖 Developer Architecture & Contributing
+
+Interested in contributing or learning how μRacing works under the hood?
+
+Check out our comprehensive **[Architecture & Contributor Guide](docs/CONTRIBUTING.md)** covering:
+- **System Architecture**: Flow of game loops, state orchestration, and WebGL/Canvas synchronization.
+- **Physics Engine**: Bicycle kinematics, tire lateral slip, and dual-circle collision resolution.
+- **Track Geometry**: Catmull-Rom spline sampling, 3D ribbon generation, and 360° inversion loops.
+- **Autonomous AI**: Path prediction, peer separation forces, and stuck detection.
+- **How-To Guides**: Step-by-step instructions for adding new vehicles and circuits.
