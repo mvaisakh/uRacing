@@ -11,6 +11,7 @@ export class InputHandler {
       steerRight: ['KeyD', 'ArrowRight'],
       handbrake: ['Space'],
       nitro: ['ShiftLeft', 'ShiftRight'],
+      useItem: ['KeyE'],
       reset: ['KeyR']
     };
 
@@ -87,6 +88,7 @@ export class InputHandler {
       steer,
       handbrake: this.isActionActive('handbrake'),
       nitro: this.isActionActive('nitro'),
+      useItem: this.isActionActive('useItem'),
       reset: this.isActionActive('reset')
     };
   }

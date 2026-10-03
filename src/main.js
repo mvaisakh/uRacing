@@ -35,6 +35,7 @@ import { AudioSFXManager } from './audio/AudioSFXManager.js';
 import { TouchControls } from './ui/TouchControls.js';
 import { PerformanceMonitor } from './core/PerformanceMonitor.js';
 import { EngineDiagnostics } from './core/Diagnostics.js';
+import { PowerUpManager } from './powerups/PowerUpManager.js';
 
 function initGame() {
   const canvas = document.getElementById('game-canvas');
@@ -104,6 +105,7 @@ function initGame() {
   let trackConfig = TRACK_ROSTER[currentTrackKey];
   let spline, splineSamples, trackRibbon, trackBarriers;
   let surfaceManager, checkpointSystem, propManager, minimap;
+  let powerUpManager = new PowerUpManager();
   let lapTimer = new LapTimer();
   let rubberBanding = new RubberBanding();
 
@@ -133,6 +135,7 @@ function initGame() {
     checkpointSystem = new CheckpointSystem(splineSamples, trackConfig.trackWidth / 2, 8);
     propManager = new PropManager(trackConfig.environment);
     minimap = new Minimap(splineSamples, 170);
+    powerUpManager.setSplineSamples(splineSamples);
     if (raceManager) raceManager.totalLaps = trackConfig.laps;
     threeRenderer.buildEnvironment(trackConfig, splineSamples, trackBarriers, propManager);
     threeRenderer.clearParticles();
@@ -231,6 +234,11 @@ function initGame() {
     onTrackAction: () => trackSelectUI.selectCurrent(),
     onOppMinus: () => trackSelectUI.changeOpponentCount(-1),
     onOppPlus: () => trackSelectUI.changeOpponentCount(1),
+    onUseItem: () => {
+      if (playerCar && powerUpManager) {
+        powerUpManager.usePowerUp(playerCar, [playerCar, ...aiCars], sounds, cameraShake);
+      }
+    },
     onReset: () => startRaceSession(),
     onEscape: () => setScreen('GARAGE')
   });
@@ -284,6 +292,12 @@ function initGame() {
         }
       }
 
+      // Check combat power-up item activation (KeyE or touch)
+      if (rawControls.useItem && raceManager.canDrive()) {
+        const allCars = playerCar ? [playerCar, ...aiCars] : aiCars;
+        powerUpManager.usePowerUp(playerCar, allCars, sounds, cameraShake);
+      }
+
       const playerControls = raceManager.canDrive() ? rawControls : { throttle: 0, brake: 0, steer: 0, handbrake: false };
 
       surfaceManager.evaluateSurface(playerCar);
@@ -303,8 +317,14 @@ function initGame() {
           splineSamples.length
         );
         const allCars = playerCar ? [playerCar, ...aiCars] : aiCars;
-        const aiControls = raceManager.canDrive() ? ctrl.update(dt, aiDiff, allCars) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
+        const aiControls = raceManager.canDrive() ? ctrl.update(dt, aiDiff, allCars, powerUpManager) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
         ai.update(aiControls, dt);
+      }
+
+      // Update Combat Power-Ups (spawners, homing missiles, shields, oil puddles)
+      if (raceManager.canDrive()) {
+        const allCars = playerCar ? [playerCar, ...aiCars] : aiCars;
+        powerUpManager.update(dt, allCars, sounds, cameraShake);
       }
 
       // Boost Zones & Jump Mechanics
@@ -490,6 +510,8 @@ function initGame() {
          threeRenderer.updateCamera(playerCar, loop.step);
       }
       
+      const allActiveCars = playerCar ? [playerCar, ...aiCars] : aiCars;
+      threeRenderer.renderPowerUps(powerUpManager, allActiveCars);
       threeRenderer.render(loop.step);
       
       // 2D particles removed as they don't align with 3D perspective camera
@@ -518,6 +540,9 @@ function initGame() {
 
       // Nitro HUD Meter
       nitro.renderHUD(ctx, 310, 36);
+
+      // Power-Up Item HUD Slot
+      powerUpManager.renderHUD(ctx, 450, 36, playerCar);
 
       // Speedometer Gauge with Vehicle Structural Health Ring
       speedometer.render(ctx, 20, canvas.height - 150, playerCar.forwardVelocity, playerCar.spec.stats.topSpeed, playerCar.isDrifting, playerCar.health);

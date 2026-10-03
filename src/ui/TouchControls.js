@@ -176,6 +176,10 @@ export class TouchControls {
       if (btnId === 'brake') this.input.setVirtualKey('KeyS', isPressed);
       if (btnId === 'nitro') this.input.setVirtualKey('ShiftLeft', isPressed);
       if (btnId === 'drift') this.input.setVirtualKey('Space', isPressed);
+      if (btnId === 'useItem') {
+        this.input.setVirtualKey('KeyE', isPressed);
+        if (isPressed && this.callbacks.onUseItem) this.callbacks.onUseItem();
+      }
       if (btnId === 'reset' && isPressed) {
         if (this.callbacks.onReset) this.callbacks.onReset();
       }
@@ -258,6 +262,10 @@ export class TouchControls {
     // Drift / Handbrake button above steering
     const driftSize = btnSize * 0.85;
     this._registerAndDrawButton(ctx, 'drift', leftX, steerY - driftSize - 12, btnSize * 2 + 14, driftSize, 'DRIFT [SLIDE]', '#8e44ad', '#e056fd');
+
+    // Power-Up Item Use Touch Button (above Drift)
+    const itemH = btnSize * 0.75;
+    this._registerAndDrawButton(ctx, 'useItem', leftX, steerY - driftSize - 12 - itemH - 10, btnSize * 2 + 14, itemH, '✨ USE ITEM [E]', '#d35400', '#f39c12');
 
     // Right side: GAS, REV/BRAKE, NITRO
     const gasX = width - btnSize - pad;

@@ -148,6 +148,10 @@ export class ThreeRenderer {
     this.skidMesh = new THREE.Mesh(this.skidGeo, this.skidMat);
     this.scene.add(this.skidMesh);
     this.lastWheels = new Map();
+
+    // 3D Arcade Power-Ups Group (Crystal Orbs, Missiles, Oil Slicks, Force Shields, EMP Shockwaves)
+    this.powerupsGroup = new THREE.Group();
+    this.scene.add(this.powerupsGroup);
   }
 
   resize(w, h) {
@@ -2087,5 +2091,114 @@ export class ThreeRenderer {
     );
     this.cameraLookAt.lerp(lookAtPos, 6.0 * dt);
     this.camera.lookAt(this.cameraLookAt);
+  }
+
+  renderPowerUps(powerUpManager, allCars = []) {
+    if (!this.powerupsGroup) return;
+
+    // Clear previous dynamic power-up meshes
+    while (this.powerupsGroup.children.length > 0) {
+      const child = this.powerupsGroup.children[0];
+      this.powerupsGroup.remove(child);
+      if (child.geometry) child.geometry.dispose();
+    }
+
+    if (!powerUpManager || this.garageMode) return;
+
+    // 1. Render Floating Crystal Pickups
+    const crystalGeo = new THREE.OctahedronGeometry(6.5, 0);
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: 0x00f2fe,
+      emissive: 0x00a8ff,
+      emissiveIntensity: 0.7,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+    const inactiveMat = new THREE.MeshStandardMaterial({
+      color: 0x57606f,
+      roughness: 0.8,
+      transparent: true,
+      opacity: 0.3
+    });
+
+    for (const p of powerUpManager.pickups) {
+      const m = new THREE.Mesh(crystalGeo, p.active ? crystalMat : inactiveMat);
+      // Raycast or float 12 units above track
+      m.position.set(p.position.x, 14 + Math.sin(p.rotation) * 2.5, p.position.y);
+      m.rotation.y = p.rotation;
+      m.rotation.x = 0.4;
+      this.powerupsGroup.add(m);
+    }
+
+    // 2. Render Flying Rockets / Missiles
+    const rocketBodyGeo = new THREE.CylinderGeometry(1.6, 1.6, 9, 8);
+    rocketBodyGeo.rotateX(Math.PI / 2);
+    const rocketMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c, metalness: 0.6 });
+    const tipGeo = new THREE.ConeGeometry(2.2, 5, 8);
+    tipGeo.rotateX(Math.PI / 2);
+    const tipMat = new THREE.MeshBasicMaterial({ color: 0xfff200 });
+
+    for (const r of powerUpManager.projectiles) {
+      const rocketGroup = new THREE.Group();
+      const body = new THREE.Mesh(rocketBodyGeo, rocketMat);
+      const tip = new THREE.Mesh(tipGeo, tipMat);
+      tip.position.z = 5.5;
+      rocketGroup.add(body, tip);
+
+      rocketGroup.position.set(r.pos.x, 10, r.pos.y);
+      rocketGroup.rotation.y = -r.angle + Math.PI / 2;
+      this.powerupsGroup.add(rocketGroup);
+    }
+
+    // 3. Render Dropped Oil Slicks
+    const oilGeo = new THREE.CircleGeometry(22, 16);
+    oilGeo.rotateX(-Math.PI / 2);
+    const oilMat = new THREE.MeshStandardMaterial({
+      color: 0x111625,
+      roughness: 0.1,
+      metalness: 0.9,
+      transparent: true,
+      opacity: 0.85
+    });
+
+    for (const h of powerUpManager.hazards) {
+      const oil = new THREE.Mesh(oilGeo, oilMat);
+      oil.position.set(h.pos.x, 3.8, h.pos.y);
+      this.powerupsGroup.add(oil);
+    }
+
+    // 4. Render Expanding EMP Shockwaves
+    for (const sw of powerUpManager.shockwaves) {
+      const ringGeo = new THREE.RingGeometry(sw.radius - 2.5, sw.radius, 32);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00f2fe,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: Math.max(0, sw.life / 0.65) * 0.75
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.set(sw.pos.x, 5.0, sw.pos.y);
+      this.powerupsGroup.add(ring);
+    }
+
+    // 5. Render Force Shields & Boost Flames on Active Cars
+    const shieldGeo = new THREE.SphereGeometry(24, 16, 12);
+    const shieldMat = new THREE.MeshStandardMaterial({
+      color: 0x00d2d3,
+      emissive: 0x01a3a4,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.4,
+      roughness: 0.1
+    });
+
+    for (const car of allCars) {
+      if (car.shieldActive) {
+        const sMesh = new THREE.Mesh(shieldGeo, shieldMat);
+        sMesh.position.set(car.body.position.x, 10, car.body.position.y);
+        this.powerupsGroup.add(sMesh);
+      }
+    }
   }
 }

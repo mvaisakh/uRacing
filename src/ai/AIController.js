@@ -20,9 +20,19 @@ export class AIController {
     this.reverseSteerSign = 1;
   }
 
-  update(dt, difficultyMultiplier = 1.0, peerCars = []) {
+  update(dt, difficultyMultiplier = 1.0, peerCars = [], powerUpManager = null) {
     const pos = this.car.body.position;
     const forwardSpeed = Math.abs(this.car.forwardVelocity);
+
+    // Autonomous Combat AI: trigger held power-up opportunistically
+    if (powerUpManager && this.car.heldPowerUp && !this.car.isRouletteActive) {
+      if (!this.combatCooldown) this.combatCooldown = 1.0 + Math.random() * 2.0;
+      this.combatCooldown -= dt;
+      if (this.combatCooldown <= 0) {
+        powerUpManager.usePowerUp(this.car, peerCars);
+        this.combatCooldown = 3.0 + Math.random() * 3.0;
+      }
+    }
 
     // 1. Locate nearest spline point
     let closestDist = Infinity;

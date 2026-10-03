@@ -25,6 +25,17 @@ export class Car {
     this.maxHealth = 100;
     this.health = 100;
     this.impactEvents = [];
+
+    // Combat Power-Ups & Weapons
+    this.heldPowerUp = null;
+    this.isRouletteActive = false;
+    this.rouletteTimer = 0;
+    this.shieldActive = false;
+    this.shieldTimer = 0;
+    this.boostActive = false;
+    this.boostTimer = 0;
+    this.spinoutTimer = 0;
+    this.stunTimer = 0;
   }
 
   reset(x = 0, y = 0, angle = 0) {
@@ -38,6 +49,16 @@ export class Car {
     this.isDrifting = false;
     this.health = 100;
     this.impactEvents = [];
+
+    this.heldPowerUp = null;
+    this.isRouletteActive = false;
+    this.rouletteTimer = 0;
+    this.shieldActive = false;
+    this.shieldTimer = 0;
+    this.boostActive = false;
+    this.boostTimer = 0;
+    this.spinoutTimer = 0;
+    this.stunTimer = 0;
   }
 
   update(controls, dt) {
@@ -50,7 +71,8 @@ export class Car {
     this.lateralVelocity = this.body.velocity.dot(right);
 
     // 1. Throttle / Acceleration Force (modulates with surface traction, hauling torque & damage)
-    if (throttle > 0) {
+    const effectiveThrottle = (this.stunTimer > 0 || this.spinoutTimer > 0) ? 0 : throttle;
+    if (effectiveThrottle > 0) {
       const healthRatio = (this.health !== undefined ? this.health : 100) / 100;
       const perfScalar = 0.70 + 0.30 * healthRatio; // up to 30% reduction when heavily damaged
 
