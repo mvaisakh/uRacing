@@ -1235,9 +1235,10 @@ export class ThreeRenderer {
       const geom = this._getModelGeometry(modelId);
       const texture = this._getModelTexture(modelId);
       
+      // Use neutral white when diffuse texture map is provided so windows, grills, lights, and livery are pristine
       const mat = new THREE.MeshStandardMaterial({
         map: texture,
-        color: new THREE.Color(car.spec.color || 0xffffff),
+        color: texture ? 0xffffff : new THREE.Color(car.spec.color || 0xffffff),
         roughness: 0.35,
         metalness: 0.25
       });
