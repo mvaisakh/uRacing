@@ -345,6 +345,9 @@ export class ThreeRenderer {
       this.trackMeshes.push(s);
     }
 
+    // Room Architecture: Table Drop-off edge and back wall
+    this._addRoomArchitecture(t, envKey);
+
     // Decor props per theme
     if (envKey === 'kitchen') {
       this._addKitchenDecor();
@@ -356,6 +359,56 @@ export class ThreeRenderer {
       this._addPlayroomDecor();
     } else {
       this._addOfficeDecor();
+    }
+  }
+
+  _addRoomArchitecture(t, envKey) {
+    // 1. Countertop/Table edge drop-off (adds depth so the table feels like a raised surface, not an infinite flat plane)
+    const bevelMat = new THREE.MeshLambertMaterial({ color: t.groundAlt || 0x333333 });
+    const tableEdgeZ = new THREE.Mesh(new THREE.BoxGeometry(4200, 160, 40), bevelMat);
+    tableEdgeZ.position.set(0, -83, 1950);
+    this.scene.add(tableEdgeZ);
+    this.trackMeshes.push(tableEdgeZ);
+
+    const tableEdgeX = new THREE.Mesh(new THREE.BoxGeometry(40, 160, 3900), bevelMat);
+    tableEdgeX.position.set(2050, -83, 0);
+    this.scene.add(tableEdgeX);
+    this.trackMeshes.push(tableEdgeX);
+
+    // 2. Room Back Wall & Baseboard (creates interior room horizon)
+    const wallColor = envKey === 'kitchen' ? 0xeae6df : (envKey === 'workshop' ? 0x95a5a6 : 0xdfe6e9);
+    const wallMat = new THREE.MeshLambertMaterial({ color: wallColor });
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(5000, 1400, 60), wallMat);
+    backWall.position.set(0, 695, -2000);
+    this.scene.add(backWall);
+    this.trackMeshes.push(backWall);
+
+    const baseboardMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const baseboard = new THREE.Mesh(new THREE.BoxGeometry(5000, 50, 40), baseboardMat);
+    baseboard.position.set(0, 22, -1970);
+    this.scene.add(baseboard);
+    this.trackMeshes.push(baseboard);
+
+    // Side Wall (left)
+    const sideWall = new THREE.Mesh(new THREE.BoxGeometry(60, 1400, 4000), wallMat);
+    sideWall.position.set(-2000, 695, 0);
+    this.scene.add(sideWall);
+    this.trackMeshes.push(sideWall);
+
+    const sideBaseboard = new THREE.Mesh(new THREE.BoxGeometry(40, 50, 4000), baseboardMat);
+    sideBaseboard.position.set(-1970, 22, 0);
+    this.scene.add(sideBaseboard);
+    this.trackMeshes.push(sideBaseboard);
+
+    // Backsplash tile stripes on back wall for kitchen
+    if (envKey === 'kitchen') {
+      const tileMat = new THREE.MeshLambertMaterial({ color: 0xd5dbdb });
+      for (let ty = 50; ty < 400; ty += 45) {
+        const grout = new THREE.Mesh(new THREE.BoxGeometry(4900, 4, 10), tileMat);
+        grout.position.set(0, ty, -1965);
+        this.scene.add(grout);
+        this.trackMeshes.push(grout);
+      }
     }
   }
 
@@ -392,6 +445,55 @@ export class ThreeRenderer {
     board.position.set(1600, 9, -1100);
     this.scene.add(board);
     this.trackMeshes.push(board);
+
+    // Chrome 2-Slice Bread Toaster
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf1f2f6, metalness: 0.85, roughness: 0.2 });
+    const blackMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const toasterGroup = new THREE.Group();
+    const toasterBody = new THREE.Mesh(new THREE.BoxGeometry(160, 110, 120), chromeMat);
+    toasterBody.position.y = 55;
+    toasterGroup.add(toasterBody);
+    // Toast slots
+    const slot1 = new THREE.Mesh(new THREE.BoxGeometry(110, 8, 16), blackMat);
+    slot1.position.set(0, 110, -25);
+    const slot2 = new THREE.Mesh(new THREE.BoxGeometry(110, 8, 16), blackMat);
+    slot2.position.set(0, 110, 25);
+    toasterGroup.add(slot1); toasterGroup.add(slot2);
+    // Lever knob
+    const knob = new THREE.Mesh(new THREE.BoxGeometry(16, 12, 10), blackMat);
+    knob.position.set(85, 75, 0);
+    toasterGroup.add(knob);
+    toasterGroup.position.set(-1650, 0, -1250);
+    toasterGroup.rotation.y = 0.25;
+    this.scene.add(toasterGroup);
+    this.trackMeshes.push(toasterBody, slot1, slot2, knob);
+
+    // Angled Wood Knife Block with Stainless Knife Handles
+    const knifeBlockMat = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
+    const knifeGroup = new THREE.Group();
+    const blockMesh = new THREE.Mesh(new THREE.BoxGeometry(90, 160, 150), knifeBlockMat);
+    blockMesh.rotation.x = -0.3;
+    blockMesh.position.set(0, 80, 0);
+    knifeGroup.add(blockMesh);
+    // 3 Knife handles poking out
+    for (let k = -1; k <= 1; k++) {
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(14, 70, 20), blackMat);
+      handle.rotation.x = -0.3;
+      handle.position.set(k * 24, 165, -35);
+      knifeGroup.add(handle);
+      this.trackMeshes.push(handle);
+    }
+    knifeGroup.position.set(-1250, 0, -1450);
+    this.scene.add(knifeGroup);
+    this.trackMeshes.push(blockMesh);
+
+    // Cereal / Snack Box diorama prop
+    const cerealMat = new THREE.MeshLambertMaterial({ color: 0xe67e22 });
+    const cerealBox = new THREE.Mesh(new THREE.BoxGeometry(140, 240, 60), cerealMat);
+    cerealBox.position.set(1100, 120, -1550);
+    cerealBox.rotation.y = -0.15;
+    this.scene.add(cerealBox);
+    this.trackMeshes.push(cerealBox);
   }
 
   _addWorkshopDecor() {
@@ -412,6 +514,16 @@ export class ThreeRenderer {
     paint.position.set(-1500, 60, -700);
     this.scene.add(paint);
     this.trackMeshes.push(paint);
+
+    // Red Heavy Steel Toolbox with handle
+    const redMat = new THREE.MeshLambertMaterial({ color: 0xc0392b });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x1e272e });
+    const toolbox = new THREE.Mesh(new THREE.BoxGeometry(260, 140, 130), redMat);
+    toolbox.position.set(-1600, 70, -1300);
+    const tbHandle = new THREE.Mesh(new THREE.BoxGeometry(90, 20, 14), darkMat);
+    tbHandle.position.set(-1600, 148, -1300);
+    this.scene.add(toolbox); this.scene.add(tbHandle);
+    this.trackMeshes.push(toolbox, tbHandle);
   }
 
   _addGardenDecor() {
@@ -465,6 +577,22 @@ export class ThreeRenderer {
     pad.position.set(1200, 17.5, 600);
     this.scene.add(pad);
     this.trackMeshes.push(pad);
+
+    // Anglepoise Desk Lamp
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.3 });
+    const lampGroup = new THREE.Group();
+    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(70, 75, 15, 24), lampMat);
+    lampBase.position.y = 7.5;
+    const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 280, 12), lampMat);
+    lampPole.position.set(0, 145, 0);
+    lampPole.rotation.z = -0.2;
+    const lampShade = new THREE.Mesh(new THREE.ConeGeometry(55, 65, 24, 1, true), lampMat);
+    lampShade.position.set(45, 285, 0);
+    lampShade.rotation.z = 2.4;
+    lampGroup.add(lampBase); lampGroup.add(lampPole); lampGroup.add(lampShade);
+    lampGroup.position.set(-1500, 0, -1400);
+    this.scene.add(lampGroup);
+    this.trackMeshes.push(lampBase, lampPole, lampShade);
   }
 
   _buildDetailedProp(prop) {
