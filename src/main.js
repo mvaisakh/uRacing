@@ -302,7 +302,8 @@ function initGame() {
           trk.nextGateIndex * 15,
           splineSamples.length
         );
-        const aiControls = raceManager.canDrive() ? ctrl.update(dt, aiDiff) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
+        const allCars = playerCar ? [playerCar, ...aiCars] : aiCars;
+        const aiControls = raceManager.canDrive() ? ctrl.update(dt, aiDiff, allCars) : { throttle: 0, brake: 0, steer: 0, handbrake: false };
         ai.update(aiControls, dt);
       }
 
