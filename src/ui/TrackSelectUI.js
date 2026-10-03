@@ -466,7 +466,9 @@ export class TrackSelectUI {
       workshop: { label: 'WORKSHOP WORKBENCH', color: '#54a0ff', icon: '🔧' },
       garden: { label: 'GARDEN PATIO', color: '#1dd1a1', icon: '🌿' },
       playroom: { label: 'PLAYROOM CARPET', color: '#ee5253', icon: '🧸' },
-      office: { label: 'ARCHITECT DESK', color: '#f368e0', icon: '📐' }
+      office: { label: 'ARCHITECT DESK', color: '#f368e0', icon: '📐' },
+      sandbox: { label: 'SANDBOX QUARRY (OFF-ROAD)', color: '#f1c40f', icon: '🏜️' },
+      mud_garden: { label: 'MUD TRENCH DERBY (OFF-ROAD)', color: '#a0522d', icon: '🚜' }
     };
     const envInfo = envThemes[track.environment] || { label: track.environment.toUpperCase(), color: '#00f2fe', icon: '🏁' };
 
