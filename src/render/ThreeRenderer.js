@@ -955,8 +955,19 @@ export class ThreeRenderer {
 
     // Track elevation profile — custom per track for standard circuits, 360 inversion loop, and canyon bridge jumps
     let elevFn;
-    if (trackConfig.id === 'uracing_inversion_loop') {
-      // 360 Loop Track: flat start, pre-boost run, massive loop peaking at Y=220, smooth landing run
+    if (trackConfig.id === 'sandbox_quarry' || trackConfig.id === 'mud_trench_derby') {
+      // Off-road tracks: No ramp jumps, rugged grounded tabletop terrain with natural terrain ripples
+      elevFn = (p) => {
+        const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
+        if (p < 0.15) return trackBaseY;
+        if (p < 0.35) { const t = (p - 0.15) / 0.20; return trackBaseY + ease(t) * 12; }
+        if (p < 0.55) { const t = (p - 0.35) / 0.20; return trackBaseY + 12 - ease(t) * 16; }
+        if (p < 0.75) { const t = (p - 0.55) / 0.20; return trackBaseY - 4 + ease(t) * 14; }
+        if (p < 0.90) { const t = (p - 0.75) / 0.15; return trackBaseY + 10 - ease(t) * 10; }
+        return trackBaseY;
+      };
+    } else if (trackConfig.id === 'uracing_inversion_loop') {
+      // 360 Loop Track: flat start, pre-boost run, massive loop peaking at Y=220, technical ramp jump at p=0.64-0.74
       elevFn = (p) => {
         const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
         if (p < 0.26) return trackBaseY;
@@ -965,13 +976,15 @@ export class ThreeRenderer {
           const prog = (p - 0.26) / 0.18;
           return trackBaseY + Math.sin(prog * Math.PI) * 190;
         }
-        if (p < 0.52) return trackBaseY;
-        if (p < 0.65) { const t = (p - 0.52) / 0.13; return trackBaseY + ease(t) * 45; }
-        if (p < 0.78) { const t = (p - 0.65) / 0.13; return trackBaseY + 45 - ease(t) * 45; }
+        if (p < 0.56) return trackBaseY;
+        if (p < 0.64) { const t = (p - 0.56) / 0.08; return trackBaseY + ease(t) * 45; } // Jump launch kicker
+        if (p < 0.70) return -80; // Airtime gap
+        if (p < 0.74) { const t = (p - 0.70) / 0.04; return trackBaseY + 38 - ease(t) * 15; } // Landing ramp
+        if (p < 0.84) { const t = (p - 0.74) / 0.10; return trackBaseY + 23 - ease(t) * 23; }
         return trackBaseY;
       };
     } else if (trackConfig.id === 'twin_bridge_skyway') {
-      // Twin Bridge & Canyon Jump: elevated bridge span, canyon jump gap at p=0.38-0.46, ramp landing
+      // Twin Bridge & Canyon Jump: elevated bridge span, canyon jump gap at p=0.38-0.48, ramp landing
       elevFn = (p) => {
         const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
         if (p < 0.12) return trackBaseY;
@@ -985,20 +998,19 @@ export class ThreeRenderer {
         return trackBaseY;
       };
     } else {
-      // Standard dynamic undulating tabletop terrain
+      // Standard tabletop circuits: Elevated approach, launch ramp kicker, airborne gap, landing ramp
       elevFn = (p) => {
         const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
         if (p < 0.10) return trackBaseY;
         if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; }
         if (p < 0.28) return trackBaseY + 20;
-        if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; }
-        if (p < 0.40) return trackBaseY + 50;
-        if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; }
-        if (p < 0.55) return trackBaseY - 5;
-        if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; }
-        if (p < 0.68) return trackBaseY + 30;
-        if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; }
-        if (p < 0.90) return trackBaseY;
+        if (p < 0.35) { const t = (p - 0.28) / 0.07; return trackBaseY + 20 + ease(t) * 15; }
+        if (p < 0.38) { const t = (p - 0.35) / 0.03; return trackBaseY + 35 + ease(t) * 25; } // Ramp Kicker (+60)
+        if (p < 0.48) return -80; // Airtime gap (missing track surface for jump flight)
+        if (p < 0.52) { const t = (p - 0.48) / 0.04; return trackBaseY + 48 - ease(t) * 22; } // Landing ramp
+        if (p < 0.62) { const t = (p - 0.52) / 0.10; return trackBaseY + 26 - ease(t) * 26; } // Smooth run-out
+        if (p < 0.72) { const t = (p - 0.62) / 0.10; return trackBaseY + ease(t) * 22; }
+        if (p < 0.82) { const t = (p - 0.72) / 0.10; return trackBaseY + 22 - ease(t) * 22; }
         return trackBaseY;
       };
     }
@@ -1226,15 +1238,16 @@ export class ThreeRenderer {
 
   _buildSpeedBoostPads(splineSamples, trackConfig, trackWidth, elevFn) {
     const N = splineSamples.length;
-    let boostRange = [0.22, 0.27];
-    if (trackConfig.hasJump) {
-      boostRange = [0.31, 0.36];
-    } else if (trackConfig.loopSection) {
-      boostRange = [trackConfig.loopSection.boostStart, trackConfig.loopSection.boostEnd];
+    const ranges = [];
+    if (trackConfig.jumpSection) {
+      const bp = trackConfig.jumpSection.boostP || 0.32;
+      ranges.push([Math.max(0, bp - 0.02), Math.min(1, bp + 0.04)]);
+    } else if (trackConfig.hasJump) {
+      ranges.push([0.31, 0.36]);
     }
-
-    const startIdx = Math.floor(boostRange[0] * N);
-    const endIdx = Math.floor(boostRange[1] * N);
+    if (trackConfig.loopSection) {
+      ranges.push([trackConfig.loopSection.boostStart, trackConfig.loopSection.boostEnd]);
+    }
 
     // Neon Chevron Boost Texture
     const bCanvas = document.createElement('canvas');
@@ -1269,20 +1282,24 @@ export class ThreeRenderer {
       polygonOffsetUnits: -3
     });
 
-    for (let i = startIdx; i <= endIdx; i += 2) {
-      const s = splineSamples[i % N];
-      const p = (i % N) / N;
-      const y = elevFn(p);
-      const angle = Math.atan2(s.tangent.y, s.tangent.x);
+    for (const [rStart, rEnd] of ranges) {
+      const startIdx = Math.floor(rStart * N);
+      const endIdx = Math.floor(rEnd * N);
+      for (let i = startIdx; i <= endIdx; i += 2) {
+        const s = splineSamples[i % N];
+        const p = (i % N) / N;
+        const y = elevFn(p);
+        const angle = Math.atan2(s.tangent.y, s.tangent.x);
 
-      const padGeo = new THREE.PlaneGeometry(trackWidth * 0.9, 18);
-      const padMesh = new THREE.Mesh(padGeo, boostMat);
-      padMesh.rotation.x = -Math.PI / 2;
-      padMesh.position.set(s.point.x, y + 0.6, s.point.y);
-      padMesh.rotation.z = -angle + Math.PI / 2;
+        const padGeo = new THREE.PlaneGeometry(trackWidth * 0.9, 18);
+        const padMesh = new THREE.Mesh(padGeo, boostMat);
+        padMesh.rotation.x = -Math.PI / 2;
+        padMesh.position.set(s.point.x, y + 0.6, s.point.y);
+        padMesh.rotation.z = -angle + Math.PI / 2;
 
-      this.scene.add(padMesh);
-      this.trackMeshes.push(padMesh);
+        this.scene.add(padMesh);
+        this.trackMeshes.push(padMesh);
+      }
     }
   }
 
@@ -1805,7 +1822,7 @@ export class ThreeRenderer {
       }
     });
 
-    this.carMeshes.set(id, { group, carMesh, origPositions, processedImpacts: 0, velY: 0 });
+    this.carMeshes.set(id, { group, carMesh, origPositions, processedImpacts: 0, velY: 0, prevSurfaceY: null });
   }
 
   _applyMeshDenting(meshObj, car) {
@@ -1907,7 +1924,17 @@ export class ThreeRenderer {
     const frontProbe = probeDown(posX + fwdX * halfL, posZ + fwdZ * halfL);
     const rearProbe  = probeDown(posX - fwdX * halfL, posZ - fwdZ * halfL);
 
-    // Gravity: accelerate downward while airborne, clamp to surface on landing.
+    // Gravity and Ramp Liftoff Physics:
+    // If the vehicle was grounded and moves up a steep ramp, compute vertical climb speed to carry into airtime
+    if (meshObj.prevSurfaceY !== null && dt > 0) {
+      const surfaceClimbRate = (surfaceY - meshObj.prevSurfaceY) / dt;
+      // If grounded on a sharp incline or jumping off a kicker ramp, impart vertical launch impulse
+      if (group.position.y <= meshObj.prevSurfaceY + 1.5 && surfaceClimbRate > 30) {
+        meshObj.velY = Math.max(meshObj.velY, surfaceClimbRate * 0.85);
+      }
+    }
+    meshObj.prevSurfaceY = surfaceY;
+
     const GRAVITY = 500; // units/s² — tuned for toy-car scale
     meshObj.velY -= GRAVITY * dt;
     let newY = group.position.y + meshObj.velY * dt;

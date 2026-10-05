@@ -12,6 +12,13 @@ export const TRACK_ROSTER = {
     "terrainType": "asphalt",
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
     "startPosition": {
       "x": 0,
       "y": -450
@@ -46,6 +53,13 @@ export const TRACK_ROSTER = {
     "terrainType": "asphalt",
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
     "startPosition": {
       "x": 0,
       "y": -550
@@ -82,6 +96,13 @@ export const TRACK_ROSTER = {
     "terrainType": "asphalt",
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
     "startPosition": {
       "x": -300,
       "y": -500
@@ -114,6 +135,13 @@ export const TRACK_ROSTER = {
     "terrainType": "asphalt",
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
     "startPosition": {
       "x": -550,
       "y": 0
@@ -147,6 +175,13 @@ export const TRACK_ROSTER = {
     "terrainType": "asphalt",
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
     "startPosition": {
       "x": 0,
       "y": -400
@@ -175,6 +210,13 @@ export const TRACK_ROSTER = {
     "terrainType": "asphalt",
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
+    "hasJump": true,
+    "jumpSection": {
+      "launchP": 0.38,
+      "landingP": 0.48,
+      "boostP": 0.32,
+      "respawnSample": 0.30
+    },
     "startPosition": {
       "x": -400,
       "y": -350
@@ -203,11 +245,18 @@ export const TRACK_ROSTER = {
     "ribbonColor": 0xff6600,
     "edgeColor": 0xcc0000,
     "hasLoop": true,
+    "hasJump": true,
     "loopSection": {
       "pStart": 0.28,
       "pEnd": 0.44,
       "boostStart": 0.22,
       "boostEnd": 0.27
+    },
+    "jumpSection": {
+      "launchP": 0.64,
+      "landingP": 0.74,
+      "boostP": 0.58,
+      "respawnSample": 0.56
     },
     "startPosition": {
       "x": -600,
