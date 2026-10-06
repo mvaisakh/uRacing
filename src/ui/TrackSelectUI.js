@@ -41,17 +41,7 @@ export class TrackSelectUI {
       // Trackmania elevation function matching ThreeRenderer
       const trackBaseY = 3;
       let elevFn;
-      if (track.id === 'sandbox_quarry' || track.id === 'mud_trench_derby') {
-        elevFn = (p) => {
-          const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
-          if (p < 0.15) return trackBaseY;
-          if (p < 0.35) { const t = (p - 0.15) / 0.20; return trackBaseY + ease(t) * 12; }
-          if (p < 0.55) { const t = (p - 0.35) / 0.20; return trackBaseY + 12 - ease(t) * 16; }
-          if (p < 0.75) { const t = (p - 0.55) / 0.20; return trackBaseY - 4 + ease(t) * 14; }
-          if (p < 0.90) { const t = (p - 0.75) / 0.15; return trackBaseY + 10 - ease(t) * 10; }
-          return trackBaseY;
-        };
-      } else if (track.id === 'uracing_inversion_loop') {
+      if (track.id === 'uracing_inversion_loop') {
         elevFn = (p) => {
           const ease = (t) => (1 - Math.cos(t * Math.PI)) / 2;
           if (p < 0.26) return trackBaseY;
@@ -59,11 +49,9 @@ export class TrackSelectUI {
             const prog = (p - 0.26) / 0.18;
             return trackBaseY + Math.sin(prog * Math.PI) * 190;
           }
-          if (p < 0.56) return trackBaseY;
-          if (p < 0.64) { const t = (p - 0.56) / 0.08; return trackBaseY + ease(t) * 45; }
-          if (p < 0.70) return -80;
-          if (p < 0.74) { const t = (p - 0.70) / 0.04; return trackBaseY + 38 - ease(t) * 15; }
-          if (p < 0.84) { const t = (p - 0.74) / 0.10; return trackBaseY + 23 - ease(t) * 23; }
+          if (p < 0.52) return trackBaseY;
+          if (p < 0.65) { const t = (p - 0.52) / 0.13; return trackBaseY + ease(t) * 45; }
+          if (p < 0.78) { const t = (p - 0.65) / 0.13; return trackBaseY + 45 - ease(t) * 45; }
           return trackBaseY;
         };
       } else if (track.id === 'twin_bridge_skyway') {
@@ -85,13 +73,14 @@ export class TrackSelectUI {
           if (p < 0.10) return trackBaseY;
           if (p < 0.20) { const t = (p - 0.10) / 0.10; return trackBaseY + ease(t) * 20; }
           if (p < 0.28) return trackBaseY + 20;
-          if (p < 0.35) { const t = (p - 0.28) / 0.07; return trackBaseY + 20 + ease(t) * 15; }
-          if (p < 0.38) { const t = (p - 0.35) / 0.03; return trackBaseY + 35 + ease(t) * 25; }
-          if (p < 0.48) return -80;
-          if (p < 0.52) { const t = (p - 0.48) / 0.04; return trackBaseY + 48 - ease(t) * 22; }
-          if (p < 0.62) { const t = (p - 0.52) / 0.10; return trackBaseY + 26 - ease(t) * 26; }
-          if (p < 0.72) { const t = (p - 0.62) / 0.10; return trackBaseY + ease(t) * 22; }
-          if (p < 0.82) { const t = (p - 0.72) / 0.10; return trackBaseY + 22 - ease(t) * 22; }
+          if (p < 0.36) { const t = (p - 0.28) / 0.08; return trackBaseY + 20 + ease(t) * 30; }
+          if (p < 0.40) return trackBaseY + 50;
+          if (p < 0.48) { const t = (p - 0.40) / 0.08; return trackBaseY + 50 - ease(t) * 55; }
+          if (p < 0.55) return trackBaseY - 5;
+          if (p < 0.62) { const t = (p - 0.55) / 0.07; return trackBaseY - 5 + ease(t) * 35; }
+          if (p < 0.68) return trackBaseY + 30;
+          if (p < 0.80) { const t = (p - 0.68) / 0.12; return trackBaseY + 30 - ease(t) * 30; }
+          if (p < 0.90) return trackBaseY;
           return trackBaseY;
         };
       }
@@ -456,18 +445,8 @@ export class TrackSelectUI {
     ctx.fillStyle = '#ff793f';
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
-    if (track.id === 'sandbox_quarry' || track.id === 'mud_trench_derby') {
-      ctx.fillText('〰 RUGGED TERRAIN RIPPLES', ex + ew * 0.5, graphY + 14);
-    } else if (track.id === 'uracing_inversion_loop') {
-      ctx.fillText('⚡ 360° VERTICAL LOOP', ex + ew * 0.35, graphY + 14);
-      ctx.fillText('▲ KICKER RAMP JUMP', ex + ew * 0.65, graphY + 14);
-    } else if (track.id === 'twin_bridge_skyway') {
-      ctx.fillText('▲ SKYWAY CANYON JUMP', ex + ew * 0.38, graphY + 14);
-      ctx.fillText('▼ GAP DROP', ex + ew * 0.44, baseY + 14);
-    } else {
-      ctx.fillText('▲ LAUNCH RAMP (+45m)', ex + ew * 0.38, graphY + 14);
-      ctx.fillText('✈ AIRTIME GAP', ex + ew * 0.44, baseY + 14);
-    }
+    ctx.fillText('▲ LAUNCH RAMP (+50m)', ex + ew * 0.38, graphY + 14);
+    ctx.fillText('▼ DROP', ex + ew * 0.52, baseY + 14);
   }
 
   _renderTrackInfoCard(ctx, x, y, w, h, track, cache) {

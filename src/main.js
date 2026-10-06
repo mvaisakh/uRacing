@@ -346,13 +346,9 @@ function initGame() {
 
         // 1. Loop Pre-Boost & Ramp Boost Zones
         let inBoostZone = false;
-        if (trackConfig.jumpSection) {
-          const bp = trackConfig.jumpSection.boostP || 0.32;
-          if (p >= bp - 0.03 && p <= bp + 0.04) inBoostZone = true;
-        } else if (trackConfig.hasJump && p >= 0.30 && p <= 0.36) {
+        if (trackConfig.hasJump && p >= 0.30 && p <= 0.36) {
           inBoostZone = true;
-        }
-        if (trackConfig.loopSection && p >= trackConfig.loopSection.boostStart && p <= trackConfig.loopSection.boostEnd) {
+        } else if (trackConfig.loopSection && p >= trackConfig.loopSection.boostStart && p <= trackConfig.loopSection.boostEnd) {
           inBoostZone = true;
         }
 
@@ -365,26 +361,21 @@ function initGame() {
           }
         }
 
-        // 2. Canyon / Ramp Jump Gap Fail Detection & Auto-Respawn with Boost
-        if (trackConfig.hasJump) {
-          const launchP = (trackConfig.jumpSection && trackConfig.jumpSection.launchP) || 0.38;
-          const landingP = (trackConfig.jumpSection && trackConfig.jumpSection.landingP) || 0.48;
-          if (p >= launchP && p <= landingP) {
-            // If car is off-track or severely under-speeded into the gap, respawn before jump with auto boost
-            if (closestDist > trackConfig.trackWidth * 0.95 || car.forwardVelocity < 150) {
-              const respawnP = (trackConfig.jumpSection && trackConfig.jumpSection.respawnSample) || 0.30;
-              const respawnIdx = Math.floor(respawnP * splineSamples.length);
-              const respawnS = splineSamples[respawnIdx];
-              const respawnAngle = respawnS.tangent.angle();
-              car.reset(respawnS.point.x, respawnS.point.y, respawnAngle);
-              // Give instant boost charge so it launches successfully across the jump
-              car.forwardVelocity = car.spec.stats.topSpeed * 1.05;
-              const boostHeading = Vec2.fromAngle(respawnAngle);
-              car.body.velocity = boostHeading.clone().scale(car.forwardVelocity);
-              if (isPlayer) {
-                sfx.playNitroWhoosh();
-                cameraShake.addTrauma(0.4);
-              }
+        // 2. Canyon Jump Fail Detection & Auto-Respawn with Boost
+        if (trackConfig.hasJump && p >= 0.38 && p <= 0.48) {
+          // If car is off-track or under-speeded into the gap, respawn before jump with auto boost
+          if (closestDist > trackConfig.trackWidth * 0.9 || car.forwardVelocity < 180) {
+            const respawnIdx = Math.floor((trackConfig.jumpSection.respawnSample || 0.30) * splineSamples.length);
+            const respawnS = splineSamples[respawnIdx];
+            const respawnAngle = respawnS.tangent.angle();
+            car.reset(respawnS.point.x, respawnS.point.y, respawnAngle);
+            // Give instant boost charge so it launches successfully across the jump
+            car.forwardVelocity = car.spec.stats.topSpeed * 1.05;
+            const boostHeading = Vec2.fromAngle(respawnAngle);
+            car.body.velocity = boostHeading.clone().scale(car.forwardVelocity);
+            if (isPlayer) {
+              sfx.playNitroWhoosh();
+              cameraShake.addTrauma(0.4);
             }
           }
         }
